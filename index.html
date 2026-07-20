@@ -218,8 +218,7 @@
         </header>
 
         <!-- DASHBOARD ADMIN -->
-       <!-- DASHBOARD ADMIN -->
-<section id="view-dashboard" style="display: none;">
+        <section id="view-dashboard" style="display: none;">
             <div class="glass-card mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div class="d-flex align-items-center gap-3">
                     <img id="admin-profile-img" src="" class="rounded-circle border" style="border-color: var(--primary)!important; width:60px; height:60px; object-fit:cover;">
@@ -1412,9 +1411,6 @@
     <!-- ========================================== -->
     <!-- FIREBASE INITIALIZATION & HYBRID SYNC -->
     <!-- ========================================== -->
-   <!-- ========================================== -->
-    <!-- FIREBASE INITIALIZATION & HYBRID SYNC -->
-    <!-- ========================================== -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
@@ -1471,7 +1467,7 @@
         let currentSiswaPelanggaran = null;
 
         // 1. EKSEKUSI INSTAN SESSION CHECK SAAT HALAMAN DIMUAT (Mencegah kedipan login)
-  (function() {
+        (function() {
             if(localStorage.getItem('guruPro_theme')) sysTheme = localStorage.getItem('guruPro_theme');
             if(localStorage.getItem('guruPro_logo')) sysLogo = localStorage.getItem('guruPro_logo');
             if(localStorage.getItem('guruPro_guruFoto')) sysGuruFoto = localStorage.getItem('guruPro_guruFoto');
@@ -1844,7 +1840,6 @@
                 document.querySelectorAll('.nav-link-custom').forEach(el => el.classList.remove('active')); 
                 navElement.classList.add('active'); 
             } else {
-                // If triggered programmatically on reload, match the active nav link if possible
                 document.querySelectorAll('.nav-link-custom').forEach(el => {
                     if(el.getAttribute('onclick') && el.getAttribute('onclick').includes(targetId)) {
                         el.classList.add('active');
@@ -2776,7 +2771,7 @@
                 tbody.innerHTML += `<tr><td><span class="badge bg-success">${u.status}</span></td><td>${u.judul}</td><td>${u.kelas}</td><td>${u.tglMulai} s.d ${u.tglSelesai}</td><td>${u.durasi} mnt</td><td>${u.soal.length} Soal</td><td><button class="btn btn-sm btn-outline-danger" onclick="hapusUjian('${u.id}')"><i class="bi bi-trash"></i></button></td></tr>`;
             });
         }
-       function renderUjianSiswa() {
+        function renderUjianSiswa() {
             const grid = document.getElementById('grid-ujian-siswa-aktif'); if(!grid) return; grid.innerHTML = '';
             let filtered = ujianDB.filter(u => u.status === 'Aktif' && (u.kelas === currentSiswaData.kelas || u.kelas === 'ALL'));
             if(filtered.length === 0) { document.getElementById('empty-ujian-siswa-msg').classList.remove('d-none'); return; }
@@ -3327,51 +3322,53 @@
         // ==========================================
         // UTILITIES & CALENDAR
         // ==========================================
-        function startClock() {
+       function startClock() {
             setInterval(() => {
                 const now = new Date();
                 const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                 const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                if(document.getElementById('digital-clock')) document.getElementById('digital-clock').textContent = timeStr;
-                if(document.getElementById('current-date')) document.getElementById('current-date').textContent = dateStr;
+                const clockEl = document.getElementById('digital-clock');
+                const dateEl = document.getElementById('current-date');
+                if(clockEl) clockEl.textContent = timeStr;
+                if(dateEl) dateEl.textContent = dateStr;
             }, 1000);
         }
 
-        function renderCalendar(bodyId, headerId) {
-            const body = document.getElementById(bodyId);
-            const header = document.getElementById(headerId);
-            if(!body || !header) return;
+        function showToast(message) {
+            const toastEl = document.getElementById('liveToast');
+            const msgEl = document.getElementById('toast-message');
+            if(toastEl && msgEl) {
+                msgEl.textContent = message;
+                const toast = new bootstrap.Toast(toastEl);
+                toast.show();
+            }
+        }
 
+        function renderCalendar(bodyId, monthYearId) {
+            const bodyEl = document.getElementById(bodyId);
+            const myTitleEl = document.getElementById(monthYearId);
+            if(!bodyEl) return;
+            bodyEl.innerHTML = '';
+            
             const now = new Date();
             const year = now.getFullYear();
             const month = now.getMonth();
-            const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-            header.textContent = `${monthNames[month]} ${year}`;
-
-            const firstDayIndex = new Date(year, month, 1).getDay();
+            
+            const firstDay = new Date(year, month, 1).getDay();
             const totalDays = new Date(year, month + 1, 0).getDate();
-            const todayDate = now.getDate();
-
-            body.innerHTML = '';
-            for(let i = 0; i < firstDayIndex; i++) {
-                body.innerHTML += `<div></div>`;
+            
+            const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            if(myTitleEl) myTitleEl.textContent = `${monthNames[month]} ${year}`;
+            
+            for(let i = 0; i < firstDay; i++) {
+                bodyEl.innerHTML += `<div></div>`;
             }
+            
+            const todayDate = now.getDate();
             for(let d = 1; d <= totalDays; d++) {
                 let isToday = (d === todayDate) ? 'today' : '';
-                body.innerHTML += `<div class="calendar-day ${isToday}">${d}</div>`;
+                bodyEl.innerHTML += `<div class="calendar-day ${isToday}">${d}</div>`;
             }
-        }
-
-        function showToast(msg) {
-            const toastEl = document.getElementById('liveToast');
-            document.getElementById('toast-message').textContent = msg;
-            const toast = new bootstrap.Toast(toastEl);
-            toast.show();
-        }
-
-        function toggleSidebar() {
-            const sb = document.getElementById('sidebar');
-            if(sb) sb.classList.toggle('show');
         }
     </script>
 </body>
