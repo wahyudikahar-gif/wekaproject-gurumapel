@@ -4455,7 +4455,7 @@ function toggleSidebar() {
                 if(document.getElementById('view-monitoring-cbt').style.display === 'block') {
                     renderMonitoringTableReal(true);
                 }
-            }, 3000); // refresh 3 detik
+            }, 3600000); // refresh 3600 detik
         }
 
         function stopMonitoring() { if(monitoringInterval) clearInterval(monitoringInterval); }
