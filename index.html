@@ -3024,7 +3024,7 @@ document.getElementById('titleDetailPresensi').textContent = `Riwayat ${labelTit
             const toastEl = document.getElementById('liveToast');
             if(!toastEl) return;
             document.getElementById('toast-message').textContent = msg;
-            new bootstrap.Toast(toastEl, {delay:3000}).show();
+            new bootstrap.Toast(toastEl, {delay:3600000}).show();
         }
 
         function startClock() {
