@@ -4490,14 +4490,11 @@ function bukaModalSoal() {
             const tbody = document.getElementById('tbody-penilaian');
             if(!tbody) return;
 
-            // 1. Ambil nilai filter yang dipilih pengguna
             const kls = document.getElementById('filter-nilai-kelas').value;
             const jenisFilter = document.getElementById('filter-nilai-jenis').value;
 
-            // 2. Kumpulkan & Gabungkan Data Nilai (Manual + CBT)
             let combinedData = [];
 
-            // A. Ambil data dari input Manual
             if(Array.isArray(nilaiDB)) {
                 nilaiDB.forEach(n => {
                     const siswaDetail = databaseSiswa.find(s => s.nisn === n.nisn) || {};
@@ -4515,24 +4512,23 @@ function bukaModalSoal() {
                 });
             }
 
-            
             if(Array.isArray(hasilUjianDB)) {
                 hasilUjianDB.forEach(h => {
+                    const siswaDetail = databaseSiswa.find(s => s.nisn === h.nisn) || {};
                     combinedData.push({
                         id: h.id,
                         nisn: h.nisn,
-                        nama: h.namaSiswa,
-                        kelas: h.kelas,
-                        judul: h.judulUjian,
+                        nama: h.namaSiswa || h.nama || siswaDetail.nama || 'Siswa Dihapus/Tidak Ditemukan',
+                        kelas: h.kelas || siswaDetail.kelas || 'ALL',
+                        judul: h.judulUjian || h.judul || 'Ujian CBT',
                         jenis: 'Ujian CBT',
                         nilai: parseInt(h.skor) || 0,
                         catatan: h.keterangan || '-',
-                   // B. Ambil data Otomatis dari Hasil Ujian CBT     sumber: 'cbt'
+                        sumber: 'cbt'
                     });
                 });
             }
 
-            // 3. Terapkan Filter Tabel
             let filtered = combinedData;
             if(kls && kls !== 'ALL') {
                 filtered = filtered.filter(d => d.kelas === kls);
@@ -4541,24 +4537,21 @@ function bukaModalSoal() {
                 filtered = filtered.filter(d => d.jenis === jenisFilter);
             }
 
-            // 4. Tampilkan Pesan Jika Kosong
             if(filtered.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">Belum ada data nilai yang sesuai kriteria pencarian/filter.</td></tr>';
                 return;
             }
 
-            // 5. Cetak Data ke Tabel
             let html = '';
             filtered.sort((a,b) => b.nilai - a.nilai).forEach((d, i) => {
                 let predikat = getPredikat(d.nilai);
                 let status = d.nilai >= 75 ? '<span class="badge bg-success">Tuntas</span>' : '<span class="badge bg-danger">Remedial</span>';
                 
-                // Tombol aksi (Data CBT tidak boleh dihapus dari modul ini)
                 let aksi = '';
                 if(d.sumber === 'manual') {
                     aksi = `<button class="btn btn-sm btn-outline-danger py-0 border-0" onclick="hapusNilaiManual('${d.id}')" title="Hapus Nilai"><i class="bi bi-trash"></i></button>`;
                 } else {
-                    aksi = `<span class="badge bg-secondary opacity-75" title="Nilai CBT bersifat paten">Auto CBT</span>`;
+                    aksi = `<span class="badge bg-secondary opacity-75">Auto CBT</span>`;
                 }
 
                 html += `<tr>
