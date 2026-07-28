@@ -4319,8 +4319,7 @@ function bukaModalSoal() {
             muatSoalUjian();
             renderNavigasiSoalGrid();
         }
-
-        function muatSoalUjian() {
+function muatSoalUjian() {
             if(!currentExam || !currentExam.soalList) return;
             const soal = currentExam.soalList[currentSoalIndex];
             
@@ -4333,14 +4332,12 @@ function bukaModalSoal() {
             else if(soal.tipe === 'ES') tipeLabel = 'Essay';
             document.getElementById('exam-run-tipesoal').textContent = tipeLabel;
             
-            // Masukkan teks pertanyaan utama
             document.getElementById('exam-run-soal-content').innerHTML = soal.pertanyaan;
             
             const jawabArea = document.getElementById('exam-run-jawaban-area');
             let jHtml = '';
             let savedAns = currentExamAnswers[currentSoalIndex] || '';
             
-            // Render opsi berdasarkan jenis tipe soal
             if (soal.tipe === 'PG') {
                 const opsi = soal.opsi || {};
                 ['A', 'B', 'C', 'D', 'E'].forEach(k => {
@@ -4355,7 +4352,7 @@ function bukaModalSoal() {
                         </div>`;
                     }
                 });
-          } else if (soal.tipe === 'BS') {
+            } else if (soal.tipe === 'BS') {
                 let savedObjBS = typeof savedAns === 'object' ? savedAns : {};
                 jHtml += `<div class="small text-muted mb-3 fw-bold">Tentukan Benar atau Salah untuk tiap pernyataan berikut:</div>`;
                 (soal.opsi || []).forEach((item, i) => {
@@ -4394,19 +4391,6 @@ function bukaModalSoal() {
                         </div>
                     </div>`;
                 });
-            }
-                let savedObj = typeof savedAns === 'object' ? savedAns : {};
-                jHtml += `<div class="small text-muted mb-3 fw-bold">Isikan pasangan yang cocok untuk masing-masing premis:</div>`;
-                (soal.opsi || []).forEach((item, i) => {
-                    let val = savedObj[i] || '';
-                    jHtml += `
-                    <div class="p-3 mb-2 rounded border row g-2 align-items-center" style="background: var(--bg-surface);">
-                        <div class="col-6 fw-bold">${i+1}. ${item.premis}</div>
-                        <div class="col-6">
-                            <input type="text" class="form-control form-control-sm form-control-custom" value="${val}" placeholder="Ketik pasangan..." oninput="simpanJawabanKompleksMJ(${i}, this.value)">
-                        </div>
-                    </div>`;
-                });
             } else if (soal.tipe === 'IS' || soal.tipe === 'ES') {
                 let placeholder = soal.tipe === 'IS' ? 'Ketik jawaban singkat...' : 'Tulis jawaban essay Anda di sini...';
                 let tagInput = soal.tipe === 'IS' ? `<input type="text" class="form-control form-control-custom" value="${savedAns}" placeholder="${placeholder}" oninput="simpanJawabanSiswa(this.value)">` : `<textarea class="form-control form-control-custom" rows="5" placeholder="${placeholder}" oninput="simpanJawabanSiswa(this.value)">${savedAns}</textarea>`;
@@ -4415,11 +4399,9 @@ function bukaModalSoal() {
             
             jawabArea.innerHTML = jHtml;
             
-            // Pengaturan tombol navigasi bawah
             document.getElementById('btn-exam-prev').style.display = currentSoalIndex === 0 ? 'none' : 'block';
             document.getElementById('btn-exam-next').textContent = currentSoalIndex === currentExam.soalList.length - 1 ? 'Selesai / Terakhir' : 'Selanjutnya';
         }
-
         function simpanJawabanSiswa(val) {
             currentExamAnswers[currentSoalIndex] = val;
             renderNavigasiSoalGrid();
