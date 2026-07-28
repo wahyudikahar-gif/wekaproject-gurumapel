@@ -4402,17 +4402,14 @@ function bukaModalSoal() {
             });
         }
 
-        function selesaikanUjian(isAutoTimeOut = false) {
+       function selesaikanUjian(isAutoTimeOut = false) {
             if(examTimerInterval) clearInterval(examTimerInterval);
-            
-            // Menghentikan pengiriman sinyal karena ujian sudah selesai
             hentikanSinyalUjian();
             
             const overlay = document.getElementById('ruang-ujian-overlay');
             if(overlay) overlay.style.display = 'none';
             isTakingExam = false;
             
-            // Koreksi otomatis untuk soal PG & Isian Singkat
             let totalPoinDiperoleh = 0;
             let totalBobotMaks = 0;
             
@@ -4421,16 +4418,18 @@ function bukaModalSoal() {
                 totalBobotMaks += bobot;
                 let ans = currentExamAnswers[idx];
                 
+                // Pastikan properti kunci sesuai dengan database Anda (bisa soal.kunci atau soal.kunciJawaban)
+                let kunciSistem = soal.kunci || soal.kunciJawaban || ""; 
+                
                 if (soal.tipe === 'PG') {
-                    if (ans && String(ans).trim().toUpperCase() === String(soal.kunci).trim().toUpperCase()) {
+                    if (ans && String(ans).trim().toUpperCase() === String(kunciSistem).trim().toUpperCase()) {
                         totalPoinDiperoleh += bobot;
                     }
                 } else if (soal.tipe === 'IS') {
-                    if (ans && String(ans).trim().toLowerCase() === String(soal.kunci).trim().toLowerCase()) {
+                    if (ans && String(ans).trim().toLowerCase() === String(kunciSistem).trim().toLowerCase()) {
                         totalPoinDiperoleh += bobot;
                     }
                 } else {
-                    // Untuk soal kompleks/essay diberikan apresiasi nilai jika terjawab
                     if (ans !== undefined && ans !== '' && JSON.stringify(ans) !== '{}') {
                         totalPoinDiperoleh += Math.round(bobot * 0.7); 
                     }
@@ -4439,7 +4438,18 @@ function bukaModalSoal() {
             
             let skorAkhir = totalBobotMaks > 0 ? Math.round((totalPoinDiperoleh / totalBobotMaks) * 100) : 0;
             let kkm = parseInt(currentExam.kkm) || 75;
-            let predikat = getPredikat(skorAkhir);
+            
+            // Perbaikan 1: Amankan pencarian predikat (jika fungsi getPredikat tidak ada)
+            let predikat = 'C';
+            if (typeof getPredikat === 'function') {
+                predikat = getPredikat(skorAkhir);
+            } else {
+                if (skorAkhir >= 90) predikat = 'A';
+                else if (skorAkhir >= 80) predikat = 'B';
+                else if (skorAkhir >= 70) predikat = 'C';
+                else predikat = 'D';
+            }
+            
             let ket = skorAkhir >= kkm ? 'Lulus / Tuntas' : 'Remedial / Belum Tuntas';
             
             const hasilObj = {
@@ -4458,14 +4468,33 @@ function bukaModalSoal() {
             
             if(!Array.isArray(hasilUjianDB)) hasilUjianDB = [];
             hasilUjianDB.push(hasilObj);
-            saveData('hasilujian');
+            
+            // Perbaikan 2: Paksa push data ke Firebase langsung dari sini
+            try {
+                if (window.db && window.fbDoc && window.fbSetDoc) {
+                    const hasilRef = window.fbDoc(window.db, "wk_project_data", "hasilujian");
+                    window.fbSetDoc(hasilRef, { dataArray: hasilUjianDB }).catch(err => {
+                        console.error("Gagal sinkronisasi nilai ke Firebase:", err);
+                    });
+                }
+            } catch (error) {
+                console.warn("Firebase tidak tersedia untuk push otomatis.", error);
+            }
+
+            // Tetap jalankan fungsi simpan lokal jika ada
+            if (typeof saveData === 'function') {
+                saveData('hasilujian'); 
+            }
             
             Swal.fire({
-                title: isAutoTimeOut ? 'Waktu Ujian Telah Habis!' : 'Ujian Selesai!',
+                title: isAutoTimeOut ? 'Waktu Ujian Habis!' : 'Ujian Selesai!',
                 text: `Skor Akhir Anda: ${skorAkhir} (${ket})`,
                 icon: 'success'
             });
             
+            if (typeof switchTab === 'function') switchTab('view-cbt-siswa', document.getElementById('nav-siswa-cbt'));
+            renderRiwayatUjianSiswa();
+        }
             // Arahkan otomatis ke tab riwayat ujian siswa
             switchTab('view-cbt-siswa', document.getElementById('nav-siswa-cbt'));
             renderRiwayatUjianSiswa();
