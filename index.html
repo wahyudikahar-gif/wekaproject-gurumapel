@@ -4441,7 +4441,7 @@ function bukaModalSoal() {
         function triggerFilterJenisPenilaian() { renderTabelPenilaian(); }
         function getPredikat(nilai) { if(nilai>=90) return 'A'; if(nilai>=80) return 'B'; if(nilai>=70) return 'C'; return 'D'; }
 
-      // --- LIVE MONITORING CBT ---
+     // --- LIVE MONITORING CBT ---
         function populateMonitoringUjian() {
             const dropdown = document.getElementById('mon-filter-ujian');
             if(!dropdown) return;
@@ -4471,7 +4471,7 @@ function bukaModalSoal() {
             if(monitoringInterval) clearInterval(monitoringInterval);
         }
 
-        function renderMonitoringTableReal() {
+        async function renderMonitoringTableReal() {
             const tbody = document.getElementById('tbody-monitoring');
             if(!tbody) return;
 
@@ -4483,39 +4483,48 @@ function bukaModalSoal() {
             const ujian = ujianDB.find(u => u.id === currentPantauUjianId);
             if(!ujian) return;
 
+            // 1. SEDOT DATA TERBARU DARI CLOUD FIREBASE AGAR REAL-TIME
+            try {
+                if (window.db && window.fbGetDoc && window.fbDoc) {
+                    const huRef = window.fbDoc(window.db, "wk_project_data", "hasilujian");
+                    const huSnap = await window.fbGetDoc(huRef);
+                    if (huSnap.exists() && huSnap.data().dataArray) {
+                        hasilUjianDB = huSnap.data().dataArray;
+                        localStorage.setItem('guruPro_hasilujian', JSON.stringify(hasilUjianDB));
+                    }
+                }
+            } catch (e) {
+                console.warn("Gagal tarik live monitoring:", e);
+            }
+
             const klsFilter = document.getElementById('mon-filter-kelas').value;
             const search = document.getElementById('mon-search').value.toLowerCase();
 
-            // Filter target siswa berdasarkan kelas yang dijadwalkan
+            // 2. Filter Siswa Berdasarkan Kelas Ujian
             let targetSiswa = databaseSiswa;
-            if(ujian.kelas !== 'ALL') {
-                targetSiswa = targetSiswa.filter(s => s.kelas === ujian.kelas);
-            }
-            if(klsFilter !== 'ALL') {
-                targetSiswa = targetSiswa.filter(s => s.kelas === klsFilter);
-            }
-            if(search) {
-                targetSiswa = targetSiswa.filter(s => s.nama.toLowerCase().includes(search) || s.nisn.includes(search));
-            }
+            if(ujian.kelas !== 'ALL') targetSiswa = targetSiswa.filter(s => s.kelas === ujian.kelas);
+            if(klsFilter !== 'ALL') targetSiswa = targetSiswa.filter(s => s.kelas === klsFilter);
+            if(search) targetSiswa = targetSiswa.filter(s => s.nama.toLowerCase().includes(search) || s.nisn.includes(search));
 
-            let statHadir = 0, statSedang = 0, statSelesai = 0, statBelum = 0;
+            let statHadir = 0, statSelesai = 0, statBelum = 0;
             let html = '';
 
             targetSiswa.forEach(s => {
-                // Cek apakah siswa sudah selesai (datanya masuk ke hasilUjianDB)
+                // Cek apakah siswa sudah selesai mengumpulkan jawaban
                 const isSelesai = hasilUjianDB.find(h => h.nisn === s.nisn && h.ujianId === currentPantauUjianId);
                 
                 let statusBadge = '';
                 let progress = 0;
+                let skor = '-';
 
                 if(isSelesai) {
-                    statusBadge = '<span class="badge bg-dark">Selesai</span>';
+                    statusBadge = '<span class="badge bg-dark">⚫ Selesai</span>';
                     progress = 100;
+                    skor = isSelesai.skor;
                     statSelesai++;
-                    statHadir++;
+                    statHadir++; // Jika selesai, otomatis dihitung hadir
                 } else {
-                    // Jika belum selesai, tandai sebagai Belum/Sedang Ujian
-                    statusBadge = '<span class="badge bg-warning text-dark">Belum Selesai</span>';
+                    statusBadge = '<span class="badge bg-warning text-dark">🟡 Belum / Sedang Ujian</span>';
                     statBelum++;
                 }
 
@@ -4527,7 +4536,7 @@ function bukaModalSoal() {
                     <td><span class="badge border text-theme-primary">${s.kelas}</span></td>
                     <td>${statusBadge}</td>
                     <td>${pBar}</td>
-                    <td class="text-center fw-bold">-</td>
+                    <td class="text-center fw-bold text-success">${skor}</td>
                     <td class="text-center">-</td>
                     <td class="text-center">
                         <button class="btn btn-sm btn-outline-info py-0 border-0" title="Lihat Status"><i class="bi bi-eye"></i></button>
@@ -4535,24 +4544,25 @@ function bukaModalSoal() {
                 </tr>`;
             });
 
-            if(targetSiswa.length === 0) {
-                html = '<tr><td colspan="8" class="text-center text-muted py-4">Tidak ada siswa yang sesuai kriteria/filter.</td></tr>';
-            }
-
+            if(targetSiswa.length === 0) html = '<tr><td colspan="8" class="text-center text-muted py-4">Tidak ada siswa yang sesuai kriteria/filter.</td></tr>';
             tbody.innerHTML = html;
 
-            // Update Angka di Kartu Indikator Atas
+            // 3. Update Angka Indikator di Atas Tabel
             if(document.getElementById('mon-tot')) document.getElementById('mon-tot').textContent = targetSiswa.length;
             if(document.getElementById('mon-hdr')) document.getElementById('mon-hdr').textContent = statHadir;
             if(document.getElementById('mon-sls')) document.getElementById('mon-sls').textContent = statSelesai;
             if(document.getElementById('mon-blm')) document.getElementById('mon-blm').textContent = statBelum;
         }
 
-        function forceRefreshMonitoring() { 
-            renderMonitoringTableReal();
-            showToast('Data Monitoring Berhasil Diperbarui'); 
+        async function forceRefreshMonitoring() { 
+            const btn = document.querySelector('button[onclick="forceRefreshMonitoring()"]');
+            if(btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Syncing...';
+            
+            await renderMonitoringTableReal();
+            
+            if(btn) btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Refresh Manual';
+            showToast('Data Monitoring Berhasil Disinkronkan dengan Cloud'); 
         }
-
         // --- FORUM DISKUSI ---
         function renderForum() {
             const chatBox = document.getElementById('chat-box');
