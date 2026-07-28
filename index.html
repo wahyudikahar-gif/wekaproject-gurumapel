@@ -43,12 +43,8 @@
         
         .aheb-card { padding: 1rem; border-radius: 10px; background: var(--bg-surface); border: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; justify-content: center; }
         
-        /* TEMPELKAN KODE RAGU-RAGU DI SINI */
-        .nav-soal-btn.doubtful { background: #F59E0B !important; color: #FFF !important; border-color: #F59E0B !important; }
 
-    </style>
-</head>
-<body class="theme-wk-project" id="app-body">
+       
         body.theme-wk-project { --bg-main: #F3F4F6; --bg-surface: #FFFFFF; --bg-card: rgba(255, 255, 255, 0.98); --bg-sidebar: #FFFFFF; --primary: #0284C7; --secondary: #F59E0B; --text-main: #1E293B; --text-muted: #64748B; --border-color: rgba(2, 132, 199, 0.15); --btn-text: #FFFFFF; --pattern-color: #0284C7; --shadow-md: 0 10px 20px -5px rgba(0, 0, 0, 0.1); }
         body.theme-dark-gold { --bg-main: #140E08; --bg-surface: #1E1610; --bg-card: rgba(38, 28, 20, 0.85); --bg-sidebar: #19120C; --primary: #D4AF37; --secondary: #8C6239; --text-main: #FFFFFF; --text-muted: #A39688; --border-color: rgba(212, 175, 55, 0.2); --btn-text: #000000; --pattern-color: #D4AF37; }
         body.theme-dayak-red { --bg-main: #1A0909; --bg-surface: #2b1111; --bg-card: rgba(50, 15, 15, 0.85); --bg-sidebar: #220B0B; --primary: #E53935; --secondary: #B71C1C; --text-main: #FFFFFF; --text-muted: #FFCDD2; --border-color: rgba(229, 57, 53, 0.3); --btn-text: #FFFFFF; --pattern-color: #E53935; }
@@ -4488,17 +4484,213 @@ function bukaModalSoal() {
             });
             tbody.innerHTML = html;
         }
-        // --- PENILAIAN ---
+        // --- PENILAIAN TERPADU AKTIF ---
+        
         function renderTabelPenilaian() {
             const tbody = document.getElementById('tbody-penilaian');
-            if(tbody) tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">Belum ada data nilai.</td></tr>';
+            if(!tbody) return;
+
+            // 1. Ambil nilai filter yang dipilih pengguna
+            const kls = document.getElementById('filter-nilai-kelas').value;
+            const jenisFilter = document.getElementById('filter-nilai-jenis').value;
+
+            // 2. Kumpulkan & Gabungkan Data Nilai (Manual + CBT)
+            let combinedData = [];
+
+            // A. Ambil data dari input Manual
+            if(Array.isArray(nilaiDB)) {
+                nilaiDB.forEach(n => {
+                    const siswaDetail = databaseSiswa.find(s => s.nisn === n.nisn) || {};
+                    combinedData.push({
+                        id: n.id,
+                        nisn: n.nisn,
+                        nama: siswaDetail.nama || 'Tidak Ditemukan',
+                        kelas: siswaDetail.kelas || 'ALL',
+                        judul: n.judul,
+                        jenis: n.jenis || 'Manual',
+                        nilai: parseInt(n.nilai) || 0,
+                        catatan: n.catatan || '-',
+                        sumber: 'manual'
+                    });
+                });
+            }
+
+            
+            if(Array.isArray(hasilUjianDB)) {
+                hasilUjianDB.forEach(h => {
+                    combinedData.push({
+                        id: h.id,
+                        nisn: h.nisn,
+                        nama: h.namaSiswa,
+                        kelas: h.kelas,
+                        judul: h.judulUjian,
+                        jenis: 'Ujian CBT',
+                        nilai: parseInt(h.skor) || 0,
+                        catatan: h.keterangan || '-',
+                   // B. Ambil data Otomatis dari Hasil Ujian CBT     sumber: 'cbt'
+                    });
+                });
+            }
+
+            // 3. Terapkan Filter Tabel
+            let filtered = combinedData;
+            if(kls && kls !== 'ALL') {
+                filtered = filtered.filter(d => d.kelas === kls);
+            }
+            if(jenisFilter && jenisFilter !== 'Semua') {
+                filtered = filtered.filter(d => d.jenis === jenisFilter);
+            }
+
+            // 4. Tampilkan Pesan Jika Kosong
+            if(filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">Belum ada data nilai yang sesuai kriteria pencarian/filter.</td></tr>';
+                return;
+            }
+
+            // 5. Cetak Data ke Tabel
+            let html = '';
+            filtered.sort((a,b) => b.nilai - a.nilai).forEach((d, i) => {
+                let predikat = getPredikat(d.nilai);
+                let status = d.nilai >= 75 ? '<span class="badge bg-success">Tuntas</span>' : '<span class="badge bg-danger">Remedial</span>';
+                
+                // Tombol aksi (Data CBT tidak boleh dihapus dari modul ini)
+                let aksi = '';
+                if(d.sumber === 'manual') {
+                    aksi = `<button class="btn btn-sm btn-outline-danger py-0 border-0" onclick="hapusNilaiManual('${d.id}')" title="Hapus Nilai"><i class="bi bi-trash"></i></button>`;
+                } else {
+                    aksi = `<span class="badge bg-secondary opacity-75" title="Nilai CBT bersifat paten">Auto CBT</span>`;
+                }
+
+                html += `<tr>
+                    <td>${i + 1}</td>
+                    <td>${d.nisn}</td>
+                    <td class="fw-bold">${d.nama}</td>
+                    <td><span class="badge bg-primary me-1">${d.jenis}</span> ${d.judul}</td>
+                    <td class="fw-bold text-theme-primary fs-6">${d.nilai}</td>
+                    <td><span class="badge border border-secondary">${predikat}</span></td>
+                    <td>${status}</td>
+                    <td><small class="text-muted">${d.catatan}</small></td>
+                    <td class="text-center">${aksi}</td>
+                </tr>`;
+            });
+            
+            tbody.innerHTML = html;
         }
-        function bukaModalTambahNilaiManual() { document.getElementById('form-nilai-manual').reset(); populateSiswaDropdowns(); new bootstrap.Modal(document.getElementById('modalNilaiManual')).show(); }
-        function simpanNilaiManual(e) { e.preventDefault(); showToast('Nilai Disimpan'); bootstrap.Modal.getInstance(document.getElementById('modalNilaiManual')).hide(); }
-        function resetSemuaNilai() { showToast('Filter Penilaian Direset'); }
-        function exportNilaiExcel() { showToast('Proses Export Nilai Excel...'); }
-        function triggerFilterJenisPenilaian() { renderTabelPenilaian(); }
-        function getPredikat(nilai) { if(nilai>=90) return 'A'; if(nilai>=80) return 'B'; if(nilai>=70) return 'C'; return 'D'; }
+
+        // --- FUNGSI PENDUKUNG PENILAIAN ---
+
+        function bukaModalTambahNilaiManual() { 
+            document.getElementById('form-nilai-manual').reset(); 
+            document.getElementById('manual-nilai-id').value = '';
+            populateSiswaDropdowns(); 
+            new bootstrap.Modal(document.getElementById('modalNilaiManual')).show(); 
+        }
+
+        function simpanNilaiManual(e) { 
+            e.preventDefault(); 
+            
+            const nisn = document.getElementById('manual-nilai-nisn').value;
+            if(!nisn) return Swal.fire('Error', 'Pilih siswa terlebih dahulu!', 'error');
+
+            const id = document.getElementById('manual-nilai-id').value || 'NIL-' + Date.now();
+            const newNilai = {
+                id: id,
+                nisn: nisn,
+                nilai: document.getElementById('manual-nilai-angka').value,
+                judul: document.getElementById('manual-nilai-judul').value,
+                catatan: document.getElementById('manual-nilai-catatan').value,
+                jenis: 'Ulangan Harian', // Default jenis nilai manual
+                mapel: sysMapel
+            };
+
+            const existingIndex = nilaiDB.findIndex(n => n.id === id);
+            if (existingIndex > -1) {
+                nilaiDB[existingIndex] = newNilai;
+            } else {
+                nilaiDB.push(newNilai);
+            }
+
+            saveData('nilai');
+            renderTabelPenilaian();
+
+            bootstrap.Modal.getInstance(document.getElementById('modalNilaiManual')).hide();
+            Swal.fire('Sukses', 'Nilai manual berhasil ditambahkan.', 'success'); 
+        }
+
+        function hapusNilaiManual(id) {
+            Swal.fire({
+                title: 'Hapus Nilai?',
+                text: "Data nilai ini akan dihapus permanen!",
+                icon: 'warning',
+                showCancelButton: true
+            }).then(r => {
+                if(r.isConfirmed) {
+                    nilaiDB = nilaiDB.filter(n => n.id !== id);
+                    saveData('nilai');
+                    renderTabelPenilaian();
+                    showToast('Data Nilai Dihapus');
+                }
+            });
+        }
+
+        function resetSemuaNilai() { 
+            document.getElementById('filter-nilai-kelas').value = 'ALL';
+            document.getElementById('filter-nilai-jenis').value = 'Semua';
+            document.getElementById('filter-nilai-mapel').value = sysMapel;
+            renderTabelPenilaian();
+            showToast('Filter dikembalikan ke default'); 
+        }
+
+        async function exportNilaiExcel() { 
+            if(typeof ExcelJS === 'undefined') return Swal.fire('Error', 'Library Excel belum dimuat', 'error');
+            
+            Swal.fire({ title: 'Menyiapkan Data...', timer: 1000, didOpen: () => { Swal.showLoading() } });
+            
+            const wb = new ExcelJS.Workbook();
+            const ws = wb.addWorksheet('Rekap Penilaian');
+            
+            ws.addRow(['REKAPITULASI PENILAIAN TERPADU']); 
+            ws.mergeCells('A1:G1');
+            ws.addRow([]);
+            ws.addRow(['No', 'NISN', 'Nama Siswa', 'Jenis', 'Judul/Materi', 'Nilai', 'Catatan']);
+            
+            // Ambil data yang sedang tampil di tabel
+            const rows = document.querySelectorAll('#tbody-penilaian tr');
+            let dataAda = false;
+            
+            rows.forEach((tr, i) => {
+                if(tr.cells.length > 1) { // Abaikan baris "Belum ada data"
+                    dataAda = true;
+                    ws.addRow([
+                        i + 1, 
+                        tr.cells[1].innerText, // NISN
+                        tr.cells[2].innerText, // Nama
+                        tr.cells[3].innerText.split('\n')[0], // Jenis
+                        tr.cells[3].innerText.split('\n')[1] || tr.cells[3].innerText, // Judul
+                        tr.cells[4].innerText, // Nilai
+                        tr.cells[7].innerText  // Catatan
+                    ]);
+                }
+            });
+
+            if(!dataAda) return Swal.fire('Gagal', 'Tidak ada data untuk diekspor', 'warning');
+
+            const buf = await wb.xlsx.writeBuffer();
+            saveAs(new Blob([buf]), `Rekap_Nilai_${Date.now()}.xlsx`);
+            showToast('Export Berhasil!');
+        }
+
+        function triggerFilterJenisPenilaian() { 
+            renderTabelPenilaian(); 
+        }
+
+        function getPredikat(nilai) { 
+            const n = parseInt(nilai) || 0;
+            if(n >= 90) return 'A'; 
+            if(n >= 80) return 'B'; 
+            if(n >= 70) return 'C'; 
+            return 'D'; 
+        }
 
      // --- LIVE MONITORING CBT ---
         function populateMonitoringUjian() {
