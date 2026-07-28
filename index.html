@@ -4095,72 +4095,84 @@ function bukaModalSoal() {
         }
 
         // Fungsi sementara untuk merespons klik tombol "Kerjakan Sekarang"
-    function masukRuangUjian(id) {
-            const ujian = ujianDB.find(u => u.id === id);
-            if(!ujian) return;
-            
-            // PENGAMANAN EKSTRA: Tarik ulang data bank soal langsung dari LocalStorage jika memori kosong
-            if (!bankSoalDB || bankSoalDB.length === 0) {
-                const savedBS = localStorage.getItem('guruPro_banksoal');
-                if (savedBS) {
-                    try { bankSoalDB = JSON.parse(savedBS); } catch(e) {}
+    async function masukRuangUjian(id) {
+            // Tampilkan loading sebentar untuk menarik data dari cloud
+            Swal.fire({
+                title: 'Memuat Soal...',
+                text: 'Menghubungkan ke server cloud...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            // Tarik data terbaru langsung dari Cloud Firebase ke perangkat siswa
+            try {
+                if (window.db && window.fbGetDoc && window.fbDoc) {
+                    const bsRef = window.fbDoc(window.db, "wk_project_data", "banksoal");
+                    const bsSnap = await window.fbGetDoc(bsRef);
+                    if (bsSnap.exists() && bsSnap.data().dataArray) {
+                        bankSoalDB = bsSnap.data().dataArray;
+                    }
+
+                    const ujRef = window.fbDoc(window.db, "wk_project_data", "ujian");
+                    const ujSnap = await window.fbGetDoc(ujRef);
+                    if (ujSnap.exists() && ujSnap.data().dataArray) {
+                        ujianDB = ujSnap.data().dataArray;
+                    }
                 }
+            } catch (e) {
+                console.warn("Gagal sinkronisasi live:", e);
             }
 
-            Swal.fire({
-                title: 'Mulai Ujian?',
-                text: `Anda akan mengerjakan ${ujian.judul}. Pastikan koneksi internet stabil!`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Ya, Mulai!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    currentExam = ujian;
-                    currentExamAnswers = {};
-                    currentSoalIndex = 0;
-                    isTakingExam = true;
-                    
-                    currentExam.soalList = [];
-                    
-                    // 1. Coba ambil berdasarkan soalIds yang dicentang guru
-                    if (ujian.soalIds && Array.isArray(ujian.soalIds) && ujian.soalIds.length > 0) {
-                        ujian.soalIds.forEach(sId => {
-                            let s = bankSoalDB.find(bs => bs.id === sId);
-                            if(s) currentExam.soalList.push(s);
-                        });
-                    }
-                    
-                    // 2. CADANGAN OTOMATIS: Jika karena suatu hal ID tidak cocok, ambil SEMUA soal yang ada di Bank Soal
-                    if (currentExam.soalList.length === 0 && bankSoalDB && bankSoalDB.length > 0) {
-                        currentExam.soalList = [...bankSoalDB];
-                    }
-                    
-                    // Jika bank soal benar-benar kosong melompong di browser siswa
-                    if (currentExam.soalList.length === 0) {
-                        return Swal.fire('Error', 'Gagal memuat soal. Pastikan Anda sudah membuat dan menyimpan soal di menu Bank Soal pada browser/perangkat yang sama.', 'error');
-                    }
-                    
-                    // Acak soal jika pengaturannya 'Ya'
-                    if (ujian.acak === 'Ya') {
-                        currentExam.soalList.sort(() => Math.random() - 0.5);
-                    }
-                    
-                    // Tampilkan overlay ruang ujian penuh secara langsung
-                    const overlay = document.getElementById('ruang-ujian-overlay');
-                    if(overlay) overlay.style.display = 'flex';
-                    
-                    document.getElementById('exam-run-judul').textContent = ujian.judul;
-                    document.getElementById('exam-run-siswa').textContent = `${currentSiswaData.nama} - Kelas ${currentSiswaData.kelas}`;
-                    
-                    // Jalankan Timer Ujian
-                    let durasiMenit = parseInt(ujian.durasi) || 60;
-                    examEndTime = new Date().getTime() + (durasiMenit * 60 * 1000);
-                    startExamTimer();
-                    
-                    renderNavigasiSoalGrid();
-                    muatSoalUjian();
-                }
-            });
+            Swal.close();
+
+            const ujian = ujianDB.find(u => u.id === id);
+            if(!ujian) {
+                return Swal.fire('Error', 'Jadwal ujian tidak ditemukan di server.', 'error');
+            }
+            
+            currentExam = ujian;
+            currentExamAnswers = {};
+            currentSoalIndex = 0;
+            isTakingExam = true;
+            
+            currentExam.soalList = [];
+            
+            // 1. Ambil soal berdasarkan ID yang dicentang guru
+            if (ujian.soalIds && Array.isArray(ujian.soalIds) && ujian.soalIds.length > 0) {
+                ujian.soalIds.forEach(sId => {
+                    let s = bankSoalDB.find(bs => bs.id === sId);
+                    if(s) currentExam.soalList.push(s);
+                });
+            }
+            
+            // 2. Cadangan Otomatis: Jika ID tidak cocok, ambil semua soal dari Bank Soal
+            if (currentExam.soalList.length === 0 && bankSoalDB && bankSoalDB.length > 0) {
+                currentExam.soalList = [...bankSoalDB];
+            }
+            
+            if (currentExam.soalList.length === 0) {
+                return Swal.fire('Error', 'Bank soal di server cloud masih kosong! Pastikan guru sudah menyimpan soal dan aturan Firebase sudah diatur (Allow Read/Write: true).', 'error');
+            }
+            
+            // Acak soal jika pengaturannya 'Ya'
+            if (ujian.acak === 'Ya') {
+                currentExam.soalList.sort(() => Math.random() - 0.5);
+            }
+            
+            // Tampilkan overlay ruang ujian penuh
+            const overlay = document.getElementById('ruang-ujian-overlay');
+            if(overlay) overlay.style.display = 'flex';
+            
+            document.getElementById('exam-run-judul').textContent = ujian.judul;
+            document.getElementById('exam-run-siswa').textContent = `${currentSiswaData.nama} - Kelas ${currentSiswaData.kelas}`;
+            
+            // Jalankan Timer Ujian
+            let durasiMenit = parseInt(ujian.durasi) || 60;
+            examEndTime = new Date().getTime() + (durasiMenit * 60 * 1000);
+            startExamTimer();
+            
+            renderNavigasiSoalGrid();
+            muatSoalUjian();
         }
         function renderNavigasiSoalGrid() {
             const grid = document.getElementById('exam-run-nav-grid');
