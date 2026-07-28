@@ -4985,6 +4985,83 @@ async function renderMonitoringTableReal() {
                 confirmButtonText: 'Tutup'
             });
         }
+        // --- MODUL MANAJEMEN TUGAS SISWA ---
+
+function bukaModalTambahTugas() {
+    const formTugas = document.getElementById('form-tugas');
+    if (formTugas) formTugas.reset();
+    
+    const tugasId = document.getElementById('tugas-id');
+    if (tugasId) tugasId.value = '';
+    
+    const modalTitle = document.getElementById('modalTugasTitle');
+    if (modalTitle) modalTitle.innerText = 'Buat Tugas Baru';
+    
+    const modalElement = document.getElementById('modalTambahTugas');
+    if (modalElement) {
+        var myModal = new bootstrap.Modal(modalElement);
+        myModal.show();
+    } else {
+        console.error("Elemen modalTambahTugas tidak ditemukan di HTML!");
+    }
+}
+
+function simpanTugas(event) {
+    event.preventDefault();
+    
+    const id = document.getElementById('tugas-id').value;
+    const judul = document.getElementById('tugas-judul').value;
+    const kelas = document.getElementById('tugas-kelas').value;
+    const desc = document.getElementById('tugas-desc').value;
+    const lampiran = document.getElementById('tugas-lampiran-guru').value;
+    const ta = document.getElementById('tugas-ta').value;
+    const smt = document.getElementById('tugas-smt').value;
+    const deadline = document.getElementById('tugas-deadline').value;
+
+    // Ambil data tugas lama dari localStorage atau buat array baru
+    let daftarTugas = JSON.parse(localStorage.getItem('daftar_tugas')) || [];
+
+    if (id) {
+        // Edit tugas yang sudah ada
+        daftarTugas = daftarTugas.map(t => {
+            if (t.id == id) {
+                return { ...t, judul, kelas, desc, lampiran, ta, smt, deadline };
+            }
+            return t;
+        });
+    } else {
+        // Tambah tugas baru
+        const tugasBaru = {
+            id: Date.now(),
+            judul,
+            kelas,
+            desc,
+            lampiran,
+            ta,
+            smt,
+            deadline,
+            tanggalDibuat: new Date().toISOString()
+        };
+        daftarTugas.push(tugasBaru);
+    }
+
+    // Simpan kembali ke localStorage
+    localStorage.setItem('daftar_tugas', JSON.stringify(daftarTugas));
+
+    // Tutup modal
+    const modalElement = document.getElementById('modalTambahTugas');
+    const modalInstance = bootstrap.Modal.getInstance(modalElement);
+    if (modalInstance) {
+        modalInstance.hide();
+    }
+
+    // Refresh tampilan daftar tugas jika fungsi render tersedia
+    if (typeof renderDaftarTugas === 'function') {
+        renderDaftarTugas();
+    }
+
+    alert('Tugas berhasil disimpan!');
+}
     </script>
 </body>
 </html>
