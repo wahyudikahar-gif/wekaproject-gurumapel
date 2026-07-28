@@ -4184,6 +4184,33 @@ function bukaModalSoal() {
             renderNavigasiSoalGrid();
             muatSoalUjian();
         }
+        let examTimerInterval = null;
+        let examEndTime = null;
+
+        function startExamTimer() {
+            if(examTimerInterval) clearInterval(examTimerInterval);
+            examTimerInterval = setInterval(() => {
+                let now = new Date().getTime();
+                let distance = examEndTime - now;
+                
+                if (distance < 0) {
+                    clearInterval(examTimerInterval);
+                    if (typeof selesaikanUjian === 'function') {
+                        selesaikanUjian(true); // Auto-submit jika waktu habis
+                    }
+                    return;
+                }
+                
+                let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                let seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                
+                const timerEl = document.getElementById('exam-run-timer');
+                if(timerEl) {
+                    timerEl.textContent = `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
+                }
+            }, 1000);
+        }
         function renderNavigasiSoalGrid() {
             const grid = document.getElementById('exam-run-nav-grid');
             if(!grid || !currentExam || !currentExam.soalList) return;
