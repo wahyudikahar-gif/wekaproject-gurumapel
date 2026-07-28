@@ -4370,14 +4370,13 @@ function bukaModalSoal() {
                     </div>`;
                 });
             } else if (soal.tipe === 'MJ') {
-                let savedObj = typeof savedAns === 'object' ? savedAns : {};
+                let savedObjMJ = typeof savedAns === 'object' ? savedAns : {};
                 jHtml += `<div class="small text-muted mb-3 fw-bold">Pilih pasangan yang cocok untuk masing-masing premis di bawah ini:</div>`;
                 
-                // Kumpulkan semua pilihan jawaban (pasangan) dari soal untuk dijadikan opsi dropdown
                 let listPasangan = (soal.opsi || []).map(item => item.pasangan).sort(() => Math.random() - 0.5);
 
                 (soal.opsi || []).forEach((item, i) => {
-                    let valPilihan = savedObj[i] || '';
+                    let valPilihan = savedObjMJ[i] || '';
                     let opsiDropdownHtml = `<option value="">-- Pilih Jawaban --</option>`;
                     
                     listPasangan.forEach(pas => {
@@ -4395,6 +4394,7 @@ function bukaModalSoal() {
                         </div>
                     </div>`;
                 });
+            }
                 let savedObj = typeof savedAns === 'object' ? savedAns : {};
                 jHtml += `<div class="small text-muted mb-3 fw-bold">Isikan pasangan yang cocok untuk masing-masing premis:</div>`;
                 (soal.opsi || []).forEach((item, i) => {
