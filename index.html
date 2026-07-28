@@ -1698,7 +1698,7 @@
                 else if(lowerUrl.match(/\.(mp4|webm|ogg)$/i) || lowerUrl.startsWith('data:video')) {
                     body.innerHTML = `<video src="${url}" controls autoplay style="max-width:100%; max-height:100%;"></video>`;
                 } 
-                // 3. Pratinjau YouTube (Mendukung format watch?v= maupun youtu.be/)
+                // 3. Pratinjau YouTube dengan Fallback Tombol Darurat
                 else if(lowerUrl.includes('youtube.com') || lowerUrl.includes('youtu.be')) {
                     let videoId = '';
                     if (lowerUrl.includes('youtu.be/')) {
@@ -1710,16 +1710,25 @@
                     }
 
                     if(videoId) {
-                        body.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${videoId}?autoplay=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border:none;"></iframe>`;
+                        body.innerHTML = `
+                            <div class="d-flex flex-column align-items-center justify-content-center w-100 h-100 p-2" style="background: #111;">
+                                <div class="w-100 flex-grow-1 mb-2" style="max-height: 75vh;">
+                                    <iframe width="100%" height="100%" src="https://www.youtube.com/embed/${videoId}?autoplay=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border:none; border-radius:8px;"></iframe>
+                                </div>
+                                <div class="text-center pb-2">
+                                    <small class="text-warning d-block mb-1">Jika video di atas tertulis "Video tidak tersedia", itu karena pemilik video memblokir pemutaran di luar aplikasi YouTube.</small>
+                                    <a href="${url}" target="_blank" class="btn btn-sm btn-danger fw-bold"><i class="bi bi-youtube"></i> Buka Langsung di YouTube / Tab Baru</a>
+                                </div>
+                            </div>`;
                     } else {
                         body.innerHTML = `<div class="text-center text-white"><p>Format tautan YouTube tidak valid.</p><a href="${url}" target="_blank" class="btn btn-primary">Buka di Tab Baru <i class="bi bi-box-arrow-up-right"></i></a></div>`;
                     }
                 } 
-                // 4. Pratinjau Dokumen (PDF, Word, Excel via Google Docs Viewer)
+                // 4. Pratinjau Dokumen (PDF, Word, Excel)
                 else if(lowerUrl.match(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx)$/i)) {
                     body.innerHTML = `<iframe src="https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true" width="100%" height="100%" style="border:none;"></iframe>`;
                 } 
-                // 5. Tautan Website Umum / Lainnya
+                // 5. Tautan Website Umum
                 else {
                     body.innerHTML = `
                         <div class="text-center text-white p-4">
@@ -1730,7 +1739,6 @@
                 }
             }, 400);
         }
-
         window.startFirebaseApp = async function() {
             await initApp();
         };
