@@ -4095,10 +4095,18 @@ function bukaModalSoal() {
         }
 
         // Fungsi sementara untuk merespons klik tombol "Kerjakan Sekarang"
-     function masukRuangUjian(id) {
+    function masukRuangUjian(id) {
             const ujian = ujianDB.find(u => u.id === id);
             if(!ujian) return;
             
+            // PENGAMANAN EKSTRA: Tarik ulang data bank soal langsung dari LocalStorage jika memori kosong
+            if (!bankSoalDB || bankSoalDB.length === 0) {
+                const savedBS = localStorage.getItem('guruPro_banksoal');
+                if (savedBS) {
+                    try { bankSoalDB = JSON.parse(savedBS); } catch(e) {}
+                }
+            }
+
             Swal.fire({
                 title: 'Mulai Ujian?',
                 text: `Anda akan mengerjakan ${ujian.judul}. Pastikan koneksi internet stabil!`,
@@ -4114,7 +4122,7 @@ function bukaModalSoal() {
                     
                     currentExam.soalList = [];
                     
-                    // 1. Coba ambil berdasarkan soalIds yang dicentang
+                    // 1. Coba ambil berdasarkan soalIds yang dicentang guru
                     if (ujian.soalIds && Array.isArray(ujian.soalIds) && ujian.soalIds.length > 0) {
                         ujian.soalIds.forEach(sId => {
                             let s = bankSoalDB.find(bs => bs.id === sId);
@@ -4122,15 +4130,14 @@ function bukaModalSoal() {
                         });
                     }
                     
-                    // 2. CADANGAN OTOMATIS (FAIL-SAFE):
-                    // Jika karena suatu hal ID tidak cocok atau kosong, otomatis ambil SEMUA soal dari Bank Soal
+                    // 2. CADANGAN OTOMATIS: Jika karena suatu hal ID tidak cocok, ambil SEMUA soal yang ada di Bank Soal
                     if (currentExam.soalList.length === 0 && bankSoalDB && bankSoalDB.length > 0) {
                         currentExam.soalList = [...bankSoalDB];
                     }
                     
-                    // Jika bank soal benar-benar kosong melompong
+                    // Jika bank soal benar-benar kosong melompong di browser siswa
                     if (currentExam.soalList.length === 0) {
-                        return Swal.fire('Error', 'Bank soal masih kosong! Silakan buat minimal 1 soal terlebih dahulu.', 'error');
+                        return Swal.fire('Error', 'Gagal memuat soal. Pastikan Anda sudah membuat dan menyimpan soal di menu Bank Soal pada browser/perangkat yang sama.', 'error');
                     }
                     
                     // Acak soal jika pengaturannya 'Ya'
@@ -4155,30 +4162,6 @@ function bukaModalSoal() {
                 }
             });
         }
-
-        function startExamTimer() {
-            if(examTimerInterval) clearInterval(examTimerInterval);
-            examTimerInterval = setInterval(() => {
-                let now = new Date().getTime();
-                let distance = examEndTime - now;
-                
-                if (distance < 0) {
-                    clearInterval(examTimerInterval);
-                    selesaikanUjian(true); // Auto-submit jika waktu habis
-                    return;
-                }
-                
-                let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                let seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                
-                const timerEl = document.getElementById('exam-run-timer');
-                if(timerEl) {
-                    timerEl.textContent = `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
-                }
-            }, 1000);
-        }
-
         function renderNavigasiSoalGrid() {
             const grid = document.getElementById('exam-run-nav-grid');
             if(!grid || !currentExam || !currentExam.soalList) return;
