@@ -1860,8 +1860,9 @@
             }
         }
 
-        function saveData(type) { 
+async function saveData(type) { 
             try {
+                // 1. Simpan ke LocalStorage perangkat guru
                 if(type === 'siswa' || !type) localStorage.setItem('guruPro_databaseSiswa', JSON.stringify(databaseSiswa)); 
                 if(type === 'jurnal' || !type) localStorage.setItem('guruPro_jurnal', JSON.stringify(jurnalMengajar)); 
                 if(type === 'forum' || !type) localStorage.setItem('guruPro_forum', JSON.stringify(forumDiskusi)); 
@@ -1874,28 +1875,37 @@
                 if(type === 'hasilujian' || !type) localStorage.setItem('guruPro_hasilujian', JSON.stringify(hasilUjianDB)); 
                 if(type === 'apresiasi' || !type) localStorage.setItem('guruPro_apresiasi', JSON.stringify(apresiasiDB));
 
+                // 2. Kirim dan Sinkronkan secara langsung ke Cloud Firebase
                 if(window.db && window.fbSetDoc && window.fbDoc) {
-                    const syncToFirebase = (docId, arrayData) => {
-                        const docRef = window.fbDoc(window.db, "wk_project_data", docId);
-                        window.fbSetDoc(docRef, { dataArray: arrayData }, { merge: true }).catch(err => console.warn("Firebase sync offline notice:", err));
+                    const syncToFirebase = async (docId, arrayData) => {
+                        try {
+                            const docRef = window.fbDoc(window.db, "wk_project_data", docId);
+                            await window.fbSetDoc(docRef, { dataArray: arrayData }, { merge: true });
+                            console.log("Berhasil upload ke Firebase Cloud:", docId);
+                        } catch(err) {
+                            console.error("GAGAL upload Firebase untuk " + docId, err);
+                            Swal.fire('Peringatan Cloud', `Gagal menyinkronkan ${docId} ke internet. Periksa koneksi atau rules Firebase Anda.`, 'warning');
+                        }
                     };
-                    if(type === 'siswa' || !type) syncToFirebase('databaseSiswa', databaseSiswa);
-                    if(type === 'jurnal' || !type) syncToFirebase('jurnal', jurnalMengajar);
-                    if(type === 'forum' || !type) syncToFirebase('forum', forumDiskusi);
-                    if(type === 'tugas' || !type) syncToFirebase('tugas', tugasDB);
-                    if(type === 'nilai' || !type) syncToFirebase('nilai', nilaiDB);
-                    if(type === 'pengumuman' || !type) syncToFirebase('pengumuman', pengumumanDB);
-                    if(type === 'materi' || !type) syncToFirebase('materi', materiDB);
-                    if(type === 'banksoal' || !type) syncToFirebase('banksoal', bankSoalDB);
-                    if(type === 'ujian' || !type) syncToFirebase('ujian', ujianDB);
-                    if(type === 'hasilujian' || !type) syncToFirebase('hasilujian', hasilUjianDB);
-                    if(type === 'apresiasi' || !type) syncToFirebase('apresiasi', apresiasiDB);
+
+                    if(type === 'siswa' || !type) await syncToFirebase('databaseSiswa', databaseSiswa);
+                    if(type === 'jurnal' || !type) await syncToFirebase('jurnal', jurnalMengajar);
+                    if(type === 'forum' || !type) await syncToFirebase('forum', forumDiskusi);
+                    if(type === 'tugas' || !type) await syncToFirebase('tugas', tugasDB);
+                    if(type === 'nilai' || !type) await syncToFirebase('nilai', nilaiDB);
+                    if(type === 'pengumuman' || !type) await syncToFirebase('pengumuman', pengumumanDB);
+                    if(type === 'materi' || !type) await syncToFirebase('materi', materiDB);
+                    if(type === 'banksoal' || !type) await syncToFirebase('banksoal', bankSoalDB);
+                    if(type === 'ujian' || !type) await syncToFirebase('ujian', ujianDB);
+                    if(type === 'hasilujian' || !type) await syncToFirebase('hasilujian', hasilUjianDB);
+                    if(type === 'apresiasi' || !type) await syncToFirebase('apresiasi', apresiasiDB);
+                } else {
+                    console.warn("Firebase belum terhubung (Mode Offline Lokal).");
                 }
             } catch(e) {
                 console.error("Gagal menyimpan data:", e);
             }
         }
-
         function sortDatabase() { databaseSiswa.sort((a, b) => { if(a.kelas === b.kelas) return a.nama.localeCompare(b.nama); return a.kelas.localeCompare(b.kelas); }); }
 
         function populateDropdowns() {
