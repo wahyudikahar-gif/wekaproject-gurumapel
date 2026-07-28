@@ -1678,7 +1678,7 @@
             }
         })();
 
-        function bukaFileViewer(url, title) {
+       function bukaFileViewer(url, title) {
             if(!url) return Swal.fire('Error', 'Tautan tidak tersedia.', 'error');
             
             document.getElementById('modalViewerTitle').textContent = title || 'Pratinjau File';
@@ -1689,34 +1689,46 @@
 
             setTimeout(() => {
                 const lowerUrl = url.toLowerCase();
+                
+                // 1. Pratinjau Gambar
                 if(lowerUrl.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
                     body.innerHTML = `<img src="${url}" style="max-width:100%; max-height:100%; object-fit:contain;">`;
                 } 
-                else if(lowerUrl.match(/\.(mp4|webm|ogg)$/i)) {
+                // 2. Pratinjau Video Lokal (MP4, WebM, OGG)
+                else if(lowerUrl.match(/\.(mp4|webm|ogg)$/i) || lowerUrl.startsWith('data:video')) {
                     body.innerHTML = `<video src="${url}" controls autoplay style="max-width:100%; max-height:100%;"></video>`;
                 } 
+                // 3. Pratinjau YouTube (Mendukung format watch?v= maupun youtu.be/)
                 else if(lowerUrl.includes('youtube.com') || lowerUrl.includes('youtu.be')) {
-                    let videoId = lowerUrl.split('v=')[1] || lowerUrl.split('youtu.be/')[1];
+                    let videoId = '';
+                    if (lowerUrl.includes('youtu.be/')) {
+                        videoId = lowerUrl.split('youtu.be/')[1].split('?')[0];
+                    } else if (lowerUrl.includes('v=')) {
+                        videoId = lowerUrl.split('v=')[1].split('&')[0];
+                    } else if (lowerUrl.includes('embed/')) {
+                        videoId = lowerUrl.split('embed/')[1].split('?')[0];
+                    }
+
                     if(videoId) {
-                        let ampersandPosition = videoId.indexOf('&');
-                        if(ampersandPosition !== -1) videoId = videoId.substring(0, ampersandPosition);
-                        body.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${videoId}?autoplay=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+                        body.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${videoId}?autoplay=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border:none;"></iframe>`;
                     } else {
-                        body.innerHTML = `<a href="${url}" target="_blank" class="btn btn-primary">Buka Link YouTube <i class="bi bi-box-arrow-up-right"></i></a>`;
+                        body.innerHTML = `<div class="text-center text-white"><p>Format tautan YouTube tidak valid.</p><a href="${url}" target="_blank" class="btn btn-primary">Buka di Tab Baru <i class="bi bi-box-arrow-up-right"></i></a></div>`;
                     }
                 } 
+                // 4. Pratinjau Dokumen (PDF, Word, Excel via Google Docs Viewer)
                 else if(lowerUrl.match(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx)$/i)) {
                     body.innerHTML = `<iframe src="https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true" width="100%" height="100%" style="border:none;"></iframe>`;
                 } 
+                // 5. Tautan Website Umum / Lainnya
                 else {
                     body.innerHTML = `
-                        <div class="text-center text-white">
-                            <i class="bi bi-file-earmark-break display-1 mb-3 d-block text-muted"></i>
-                            <p class="fs-5">Tipe file ini tidak mendukung pratinjau langsung di dalam aplikasi.</p>
-                            <a href="${url}" target="_blank" class="btn btn-theme-primary btn-lg mt-2">Buka di Tab Baru <i class="bi bi-box-arrow-up-right"></i></a>
+                        <div class="text-center text-white p-4">
+                            <i class="bi bi-globe display-1 mb-3 d-block text-info"></i>
+                            <p class="fs-5">Tautan ini mengarah ke halaman web/video eksternal.</p>
+                            <a href="${url}" target="_blank" class="btn btn-theme-primary btn-lg mt-2">Buka Tautan di Tab Baru <i class="bi bi-box-arrow-up-right"></i></a>
                         </div>`;
                 }
-            }, 600);
+            }, 400);
         }
 
         window.startFirebaseApp = async function() {
