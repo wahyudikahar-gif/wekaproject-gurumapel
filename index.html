@@ -4441,13 +4441,117 @@ function bukaModalSoal() {
         function triggerFilterJenisPenilaian() { renderTabelPenilaian(); }
         function getPredikat(nilai) { if(nilai>=90) return 'A'; if(nilai>=80) return 'B'; if(nilai>=70) return 'C'; return 'D'; }
 
-        // --- LIVE MONITORING CBT ---
-        function populateMonitoringUjian() { }
-        function startMonitoring() { }
-        function stopMonitoring() { }
-        function initMonitoringUjian() { }
-        function renderMonitoringTableReal() { }
-        function forceRefreshMonitoring() { showToast('Data Diperbarui'); }
+      // --- LIVE MONITORING CBT ---
+        function populateMonitoringUjian() {
+            const dropdown = document.getElementById('mon-filter-ujian');
+            if(!dropdown) return;
+            dropdown.innerHTML = '<option value="">-- Pilih Ujian Aktif --</option>';
+            
+            // Tarik hanya ujian yang berstatus "Aktif"
+            const aktifUjian = ujianDB.filter(u => u.status === 'Aktif');
+            aktifUjian.forEach(u => {
+                dropdown.innerHTML += `<option value="${u.id}">${u.judul} (${u.kelas === 'ALL' ? 'Semua Kelas' : u.kelas})</option>`;
+            });
+        }
+
+        function initMonitoringUjian() {
+            currentPantauUjianId = document.getElementById('mon-filter-ujian').value;
+            renderMonitoringTableReal();
+        }
+
+        function startMonitoring() {
+            if(monitoringInterval) clearInterval(monitoringInterval);
+            // Refresh tabel otomatis setiap 5 detik
+            monitoringInterval = setInterval(() => {
+                if(currentPantauUjianId) renderMonitoringTableReal();
+            }, 5000); 
+        }
+
+        function stopMonitoring() {
+            if(monitoringInterval) clearInterval(monitoringInterval);
+        }
+
+        function renderMonitoringTableReal() {
+            const tbody = document.getElementById('tbody-monitoring');
+            if(!tbody) return;
+
+            if(!currentPantauUjianId) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Pilih Ujian Aktif terlebih dahulu pada dropdown di atas.</td></tr>';
+                return;
+            }
+
+            const ujian = ujianDB.find(u => u.id === currentPantauUjianId);
+            if(!ujian) return;
+
+            const klsFilter = document.getElementById('mon-filter-kelas').value;
+            const search = document.getElementById('mon-search').value.toLowerCase();
+
+            // Filter target siswa berdasarkan kelas yang dijadwalkan
+            let targetSiswa = databaseSiswa;
+            if(ujian.kelas !== 'ALL') {
+                targetSiswa = targetSiswa.filter(s => s.kelas === ujian.kelas);
+            }
+            if(klsFilter !== 'ALL') {
+                targetSiswa = targetSiswa.filter(s => s.kelas === klsFilter);
+            }
+            if(search) {
+                targetSiswa = targetSiswa.filter(s => s.nama.toLowerCase().includes(search) || s.nisn.includes(search));
+            }
+
+            let statHadir = 0, statSedang = 0, statSelesai = 0, statBelum = 0;
+            let html = '';
+
+            targetSiswa.forEach(s => {
+                // Cek apakah siswa sudah selesai (datanya masuk ke hasilUjianDB)
+                const isSelesai = hasilUjianDB.find(h => h.nisn === s.nisn && h.ujianId === currentPantauUjianId);
+                
+                let statusBadge = '';
+                let progress = 0;
+
+                if(isSelesai) {
+                    statusBadge = '<span class="badge bg-dark">Selesai</span>';
+                    progress = 100;
+                    statSelesai++;
+                    statHadir++;
+                } else {
+                    // Jika belum selesai, tandai sebagai Belum/Sedang Ujian
+                    statusBadge = '<span class="badge bg-warning text-dark">Belum Selesai</span>';
+                    statBelum++;
+                }
+
+                let pBar = `<div class="progress-bar-custom"><div class="progress-fill" style="width:${progress}%"></div></div><small>${progress}%</small>`;
+
+                html += `<tr>
+                    <td class="fw-bold">${s.nama}</td>
+                    <td>${s.nisn}</td>
+                    <td><span class="badge border text-theme-primary">${s.kelas}</span></td>
+                    <td>${statusBadge}</td>
+                    <td>${pBar}</td>
+                    <td class="text-center fw-bold">-</td>
+                    <td class="text-center">-</td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-outline-info py-0 border-0" title="Lihat Status"><i class="bi bi-eye"></i></button>
+                    </td>
+                </tr>`;
+            });
+
+            if(targetSiswa.length === 0) {
+                html = '<tr><td colspan="8" class="text-center text-muted py-4">Tidak ada siswa yang sesuai kriteria/filter.</td></tr>';
+            }
+
+            tbody.innerHTML = html;
+
+            // Update Angka di Kartu Indikator Atas
+            if(document.getElementById('mon-tot')) document.getElementById('mon-tot').textContent = targetSiswa.length;
+            if(document.getElementById('mon-hdr')) document.getElementById('mon-hdr').textContent = statHadir;
+            if(document.getElementById('mon-sls')) document.getElementById('mon-sls').textContent = statSelesai;
+            if(document.getElementById('mon-blm')) document.getElementById('mon-blm').textContent = statBelum;
+        }
+
+        function forceRefreshMonitoring() { 
+            renderMonitoringTableReal();
+            showToast('Data Monitoring Berhasil Diperbarui'); 
+        }
 
         // --- FORUM DISKUSI ---
         function renderForum() {
