@@ -4184,9 +4184,6 @@ function bukaModalSoal() {
             renderNavigasiSoalGrid();
             muatSoalUjian();
         }
-        let examTimerInterval = null;
-        let examEndTime = null;
-
         function startExamTimer() {
             if(examTimerInterval) clearInterval(examTimerInterval);
             examTimerInterval = setInterval(() => {
