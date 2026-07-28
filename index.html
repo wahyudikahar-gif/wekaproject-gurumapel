@@ -4401,8 +4401,7 @@ function bukaModalSoal() {
                 }
             });
         }
-
-       function selesaikanUjian(isAutoTimeOut = false) {
+function selesaikanUjian(isAutoTimeOut = false) {
             if(examTimerInterval) clearInterval(examTimerInterval);
             hentikanSinyalUjian();
             
@@ -4439,7 +4438,7 @@ function bukaModalSoal() {
             let skorAkhir = totalBobotMaks > 0 ? Math.round((totalPoinDiperoleh / totalBobotMaks) * 100) : 0;
             let kkm = parseInt(currentExam.kkm) || 75;
             
-            // Perbaikan 1: Amankan pencarian predikat (jika fungsi getPredikat tidak ada)
+            // Perbaikan 1: Amankan pencarian predikat
             let predikat = 'C';
             if (typeof getPredikat === 'function') {
                 predikat = getPredikat(skorAkhir);
@@ -4495,10 +4494,6 @@ function bukaModalSoal() {
             if (typeof switchTab === 'function') switchTab('view-cbt-siswa', document.getElementById('nav-siswa-cbt'));
             renderRiwayatUjianSiswa();
         }
-            // Arahkan otomatis ke tab riwayat ujian siswa
-            switchTab('view-cbt-siswa', document.getElementById('nav-siswa-cbt'));
-            renderRiwayatUjianSiswa();
-        }
 
         function renderRiwayatUjianSiswa() {
             const tbody = document.getElementById('tbody-riwayat-siswa');
@@ -4535,11 +4530,9 @@ function bukaModalSoal() {
         function mulaiKirimStatusSedangUjian(ujianId, totalSoal) {
             if(intervalLiveSiswa) clearInterval(intervalLiveSiswa);
             
-            // Sinkronisasi otomatis ke server setiap 5 detik
             intervalLiveSiswa = setInterval(async () => {
                 if(!currentSiswaData || !currentSiswaData.nisn) return;
 
-                // Hitung berapa soal yang sudah dijawab siswa
                 let dijawab = 0;
                 for(let key in currentExamAnswers) {
                     if(currentExamAnswers[key] !== undefined && currentExamAnswers[key] !== '') {
@@ -4547,7 +4540,6 @@ function bukaModalSoal() {
                     }
                 }
 
-                // Hitung sisa waktu
                 let sisaDetik = Math.max(0, Math.floor((examEndTime - new Date().getTime()) / 1000));
                 let m = Math.floor(sisaDetik / 60);
                 let s = sisaDetik % 60;
@@ -4585,7 +4577,6 @@ function bukaModalSoal() {
             if(intervalLiveSiswa) clearInterval(intervalLiveSiswa);
         }
 
-        // --- FUNGSI UNTUK TOMBOL AKSI DI MONITORING GURU ---
         function detailAksiSiswa(nama, status, info) {
             Swal.fire({
                 title: 'Detail Status Ujian',
@@ -4602,4 +4593,5 @@ function bukaModalSoal() {
     </script>
 </body>
 </html>
+      
     
