@@ -4591,5 +4591,137 @@ function selesaikanUjian(isAutoTimeOut = false) {
             });
         }
     </script>
+ // --- LIVE MONITORING CBT (KEMBALIKAN FUNGSI YANG HILANG) ---
+        function populateMonitoringUjian() {
+            const dropdown = document.getElementById('mon-filter-ujian');
+            if(!dropdown) return;
+            dropdown.innerHTML = '<option value="">-- Pilih Ujian Aktif --</option>';
+            
+            const aktifUjian = ujianDB.filter(u => u.status === 'Aktif');
+            aktifUjian.forEach(u => {
+                dropdown.innerHTML += `<option value="${u.id}">${u.judul} (${u.kelas === 'ALL' ? 'Semua Kelas' : u.kelas})</option>`;
+            });
+        }
+
+        function initMonitoringUjian() {
+            currentPantauUjianId = document.getElementById('mon-filter-ujian').value;
+            renderMonitoringTableReal();
+        }
+
+        function startMonitoring() {
+            if(monitoringInterval) clearInterval(monitoringInterval);
+            monitoringInterval = setInterval(() => {
+                if(currentPantauUjianId) renderMonitoringTableReal();
+            }, 5000); 
+        }
+
+        function stopMonitoring() {
+            if(monitoringInterval) clearInterval(monitoringInterval);
+        }
+
+        async function renderMonitoringTableReal() {
+            const tbody = document.getElementById('tbody-monitoring');
+            if(!tbody) return;
+
+            if(!currentPantauUjianId) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Pilih Ujian Aktif terlebih dahulu pada dropdown di atas.</td></tr>';
+                return;
+            }
+
+            const ujian = ujianDB.find(u => u.id === currentPantauUjianId);
+            if(!ujian) return;
+
+            let liveData = [];
+            try {
+                if (window.db && window.fbGetDoc && window.fbDoc) {
+                    const huRef = window.fbDoc(window.db, "wk_project_data", "hasilujian");
+                    const huSnap = await window.fbGetDoc(huRef);
+                    if (huSnap.exists() && huSnap.data().dataArray) hasilUjianDB = huSnap.data().dataArray;
+
+                    const monRef = window.fbDoc(window.db, "wk_project_data", "live_monitoring");
+                    const monSnap = await window.fbGetDoc(monRef);
+                    if (monSnap.exists() && monSnap.data().dataArray) liveData = monSnap.data().dataArray;
+                }
+            } catch (e) {
+                console.warn("Gagal tarik live monitoring:", e);
+            }
+
+            const klsFilter = document.getElementById('mon-filter-kelas').value;
+            const search = document.getElementById('mon-search').value.toLowerCase();
+
+            let targetSiswa = databaseSiswa;
+            if(ujian.kelas !== 'ALL') targetSiswa = targetSiswa.filter(s => s.kelas === ujian.kelas);
+            if(klsFilter !== 'ALL') targetSiswa = targetSiswa.filter(s => s.kelas === klsFilter);
+            if(search) targetSiswa = targetSiswa.filter(s => s.nama.toLowerCase().includes(search) || s.nisn.includes(search));
+
+            let statHadir = 0, statSedang = 0, statSelesai = 0, statBelum = 0;
+            let html = '';
+
+            targetSiswa.forEach(s => {
+                const isSelesai = hasilUjianDB.find(h => h.nisn === s.nisn && h.ujianId === currentPantauUjianId);
+                const isLive = liveData.find(l => l.nisn === s.nisn && l.ujianId === currentPantauUjianId);
+                
+                let statusBadge = '';
+                let progress = 0;
+                let noSoalInfo = '-';
+                let sisaWaktuInfo = '-';
+                let aksiTombol = '';
+
+                if(isSelesai) {
+                    statusBadge = '<span class="badge bg-dark">⚫ Selesai</span>';
+                    progress = 100;
+                    statSelesai++;
+                    statHadir++;
+                    aksiTombol = `<button class="btn btn-sm btn-outline-success py-0 border-0" onclick="detailAksiSiswa('${s.nama}', 'Selesai', 'Skor Akhir: <b>${isSelesai.skor}</b>')" title="Lihat Status"><i class="bi bi-check-circle"></i></button>`;
+                } else if (isLive) {
+                    statusBadge = '<span class="badge bg-primary">🔵 Sedang Ujian</span>';
+                    let dijawab = isLive.dijawab || 0;
+                    let totalSoal = isLive.totalSoal || 1;
+                    progress = Math.round((dijawab / totalSoal) * 100);
+                    if(progress > 100) progress = 100;
+                    noSoalInfo = `Soal ${isLive.noSoalAktif || 1}`;
+                    sisaWaktuInfo = isLive.sisaWaktu || '-';
+                    statSedang++;
+                    statHadir++;
+                    aksiTombol = `<button class="btn btn-sm btn-outline-info py-0 border-0" onclick="detailAksiSiswa('${s.nama}', 'Sedang Ujian', 'Menjawab <b>${dijawab}</b> dari <b>${totalSoal}</b> soal.<br>Sisa Waktu: <b>${sisaWaktuInfo}</b>')" title="Lihat Detail"><i class="bi bi-eye"></i></button>`;
+                } else {
+                    statusBadge = '<span class="badge bg-warning text-dark">🟡 Belum Mulai</span>';
+                    statBelum++;
+                    aksiTombol = `<button class="btn btn-sm btn-outline-secondary py-0 border-0" onclick="detailAksiSiswa('${s.nama}', 'Belum Mulai', 'Siswa belum membuka soal.')" title="Belum Ada Data"><i class="bi bi-dash-circle"></i></button>`;
+                }
+
+                let pBar = `<div class="progress-bar-custom"><div class="progress-fill" style="width:${progress}%"></div></div><small>${progress}% (${isLive ? isLive.dijawab : 0}/${isLive ? isLive.totalSoal : 0})</small>`;
+
+                html += `<tr>
+                    <td class="fw-bold">${s.nama}</td>
+                    <td>${s.nisn}</td>
+                    <td><span class="badge border text-theme-primary">${s.kelas}</span></td>
+                    <td>${statusBadge}</td>
+                    <td>${pBar}</td>
+                    <td class="text-center fw-bold text-primary">${noSoalInfo}</td>
+                    <td class="text-center font-monospace fw-bold text-danger">${sisaWaktuInfo}</td>
+                    <td class="text-center">${aksiTombol}</td>
+                </tr>`;
+            });
+
+            if(targetSiswa.length === 0) html = '<tr><td colspan="8" class="text-center text-muted py-4">Tidak ada siswa yang sesuai kriteria/filter.</td></tr>';
+            tbody.innerHTML = html;
+
+            if(document.getElementById('mon-tot')) document.getElementById('mon-tot').textContent = targetSiswa.length;
+            if(document.getElementById('mon-hdr')) document.getElementById('mon-hdr').textContent = statHadir;
+            if(document.getElementById('mon-sdg')) document.getElementById('mon-sdg').textContent = statSedang;
+            if(document.getElementById('mon-sls')) document.getElementById('mon-sls').textContent = statSelesai;
+            if(document.getElementById('mon-blm')) document.getElementById('mon-blm').textContent = statBelum;
+        }
+
+        async function forceRefreshMonitoring() { 
+            const btn = document.querySelector('button[onclick="forceRefreshMonitoring()"]');
+            if(btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Syncing...';
+            
+            await renderMonitoringTableReal();
+            
+            if(btn) btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Refresh Manual';
+            showToast('Data Monitoring Berhasil Disinkronkan dengan Cloud'); 
+        }   
 </body>
 </html>
