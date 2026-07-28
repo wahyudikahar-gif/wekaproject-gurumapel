@@ -38,14 +38,104 @@
             --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
             --radius-sm: 10px; --radius-md: 16px; --glass-blur: blur(16px);
         }
-        /* ... kode-kode CSS Anda yang lain ... */
+
+        /* Styling Tema Warna */
+        body.theme-wk-project { --bg-main: #F3F4F6; --bg-surface: #FFFFFF; --bg-card: rgba(255, 255, 255, 0.98); --bg-sidebar: #FFFFFF; --primary: #0284C7; --secondary: #F59E0B; --text-main: #1E293B; --text-muted: #64748B; --border-color: rgba(2, 132, 199, 0.15); --btn-text: #FFFFFF; --pattern-color: #0284C7; --shadow-md: 0 10px 20px -5px rgba(0, 0, 0, 0.1); }
+        body.theme-dark-gold { --bg-main: #140E08; --bg-surface: #1E1610; --bg-card: rgba(38, 28, 20, 0.85); --bg-sidebar: #19120C; --primary: #D4AF37; --secondary: #8C6239; --text-main: #FFFFFF; --text-muted: #A39688; --border-color: rgba(212, 175, 55, 0.2); --btn-text: #000000; --pattern-color: #D4AF37; }
+        body.theme-dayak-red { --bg-main: #1A0909; --bg-surface: #2b1111; --bg-card: rgba(50, 15, 15, 0.85); --bg-sidebar: #220B0B; --primary: #E53935; --secondary: #B71C1C; --text-main: #FFFFFF; --text-muted: #FFCDD2; --border-color: rgba(229, 57, 53, 0.3); --btn-text: #FFFFFF; --pattern-color: #E53935; }
+        body.theme-emerald-forest { --bg-main: #061A14; --bg-surface: #0A261D; --bg-card: rgba(10, 38, 29, 0.85); --bg-sidebar: #081E17; --primary: #10B981; --secondary: #047857; --text-main: #FFFFFF; --text-muted: #A7F3D0; --border-color: rgba(16, 185, 129, 0.3); --btn-text: #000000; --pattern-color: #10B981; }
+        body.theme-ocean-blue { --bg-main: #0B1120; --bg-surface: #111827; --bg-card: rgba(17, 24, 39, 0.85); --bg-sidebar: #0F172A; --primary: #38BDF8; --secondary: #0369A1; --text-main: #FFFFFF; --text-muted: #BAE6FD; --border-color: rgba(56, 189, 248, 0.3); --btn-text: #000000; --pattern-color: #38BDF8; }
+        body.theme-light-wood { --bg-main: #FDFBF7; --bg-surface: #F5EFEB; --bg-card: rgba(255, 255, 255, 0.9); --bg-sidebar: #F5EFEB; --primary: #D84315; --secondary: #8D6E63; --text-main: #201A18; --text-muted: #5D4037; --border-color: rgba(216, 67, 21, 0.2); --btn-text: #FFFFFF; --pattern-color: #D84315; --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
+        body { background-color: var(--bg-main); color: var(--text-main); min-height: 100vh; overflow-x: hidden; }
+        body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background-image: var(--bg-pattern-url); color: var(--pattern-color); }
+        h1, h2, h3, h4, h5, h6, .brand-text { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; }
+        
+        .text-theme-primary { color: var(--primary) !important; }
+        .text-theme-secondary { color: var(--secondary) !important; }
+        .bg-theme-primary { background-color: var(--primary) !important; color: var(--btn-text) !important; }
+        .btn-theme-primary { background-color: var(--primary); color: var(--btn-text); font-weight: 600; border: none; }
+        .btn-theme-primary:hover { opacity: 0.9; color: var(--btn-text); }
+        .btn-theme-secondary { background-color: var(--secondary); color: #fff; font-weight: 600; border: none; }
+        .btn-theme-secondary:hover { opacity: 0.9; color: #fff; }
+        .glass-card { background: var(--bg-card); backdrop-filter: var(--glass-blur); border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow-md); padding: 1.5rem; }
+        
+        .sidebar { width: 280px; background: var(--bg-sidebar); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; position: fixed; top: 0; bottom: 0; left: 0; z-index: 1040; overflow-y: auto; }
+        .sidebar-brand-icon { width: 45px; height: 45px; border-radius: 12px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: var(--bg-surface); border: 1px solid var(--primary); }
+        .sidebar-brand-icon img { width: 100%; height: 100%; object-fit: contain; }
+        .sidebar-title { font-size: 0.75rem; font-weight: 800; color: var(--secondary); letter-spacing: 1px; padding: 10px 20px 5px; margin-top: 10px; text-transform: uppercase; }
+        .nav-link-custom { display: flex; align-items: center; gap: 14px; padding: 10px 18px; color: var(--text-muted); text-decoration: none; border-radius: var(--radius-sm); margin: 2px 14px; font-weight: 500; cursor: pointer; position: relative;}
+        .nav-link-custom:hover, .nav-link-custom.active { background: rgba(150, 150, 150, 0.15); color: var(--primary); font-weight: 600; border-left: 4px solid var(--primary); }
+        .main-content { flex: 1; margin-left: 280px; padding: 2rem; max-width: calc(100% - 280px); min-height: 100vh;}
+        
+        .stat-card { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem; border-radius: var(--radius-md); background: var(--bg-surface); border: 1px solid var(--border-color); }
+        .rombel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; }
+        .rombel-btn { background: var(--bg-surface); border: 1px solid var(--border-color); color: var(--text-main); padding: 10px 5px; border-radius: var(--radius-sm); text-align: center; font-weight: 600; cursor: pointer; }
+        .rombel-btn.active { background: var(--primary); color: var(--btn-text); }
+        
+        .table-custom { color: var(--text-main); border-collapse: separate; border-spacing: 0 8px; }
+        .table-custom thead th { border-bottom: 2px solid var(--border-color); color: var(--primary); }
+        .table-custom tbody tr { background: var(--bg-surface); }
+        .table-custom td, .table-custom th { padding: 12px 15px; border: none; vertical-align: middle; }
+        .form-control-custom, .form-select-custom { background: var(--bg-surface); border: 1px solid var(--border-color); color: var(--text-main); }
+        .form-control-custom:focus, .form-select-custom:focus { background: var(--bg-surface); border-color: var(--primary); color: var(--text-main); box-shadow: 0 0 0 0.2rem rgba(200,200,200,0.1); }
+        
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; margin-top: 10px; }
+        .calendar-day-header { font-weight: bold; color: var(--primary); font-size: 0.8rem; }
+        .calendar-day { padding: 8px; border-radius: 8px; background: var(--bg-surface); font-size: 0.9rem; border: 1px solid transparent; }
+        .calendar-day.today { background: var(--primary); color: var(--btn-text); font-weight: bold; }
+        .calendar-day.holiday { color: #F43F5E; font-weight: bold; border-color: rgba(244, 63, 94, 0.3); }
+
+        .chat-container { height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding-right: 10px; }
+        .chat-msg { display: flex; flex-direction: column; max-width: 80%; }
+        .chat-msg.me { align-self: flex-end; align-items: flex-end; }
+        .chat-msg.others { align-self: flex-start; align-items: flex-start; }
+        .chat-bubble { padding: 10px 15px; border-radius: 15px; font-size: 0.95rem; background: var(--bg-surface); border: 1px solid var(--border-color); }
+        .chat-msg.me .chat-bubble { background: var(--primary); color: var(--btn-text); border: none; }
+        .chat-sender { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 3px; font-weight: 600; }
+        .chat-attachment { max-width: 200px; border-radius: 8px; margin-top: 5px; border: 1px solid rgba(255,255,255,0.2); }
+        .emoji-picker { display: flex; gap: 5px; padding: 5px; background: var(--bg-surface); border-radius: 20px; border: 1px solid var(--border-color); overflow-x: auto; }
+        .emoji-picker span { cursor: pointer; font-size: 1.2rem; transition: transform 0.2s; }
+        .emoji-picker span:hover { transform: scale(1.2); }
+        
+        .tugas-card, .pengumuman-card { border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 15px; background: rgba(0,0,0,0.1); transition: 0.2s; }
+        .tugas-card:hover, .pengumuman-card:hover { border-color: var(--primary); }
+        .preview-box { border: 1px dashed var(--border-color); border-radius: 8px; padding: 10px; text-align: center; background: rgba(0,0,0,0.2); margin-top: 10px; max-height: 250px; overflow: hidden; display: flex; align-items: center; justify-content: center;}
+        .preview-box img, .preview-box video, .preview-box iframe { max-width: 100%; max-height: 230px; border-radius: 5px; }
+
+        .table-matrix th, .table-matrix td { padding: 10px 8px; text-align: center; vertical-align: middle; font-size: 0.95rem; border: 1px solid var(--border-color); }
+        .table-matrix th { background: var(--bg-card); position: sticky; top: 0; z-index: 2; font-weight: 600;}
+        .table-matrix td.cell-h { color: #10B981; font-weight: bold; cursor: pointer; background-color: rgba(16, 185, 129, 0.1); }
+        .table-matrix td.cell-i { color: #38BDF8; font-weight: bold; cursor: pointer; background-color: rgba(56, 189, 248, 0.1); }
+        .table-matrix td.cell-s { color: #F59E0B; font-weight: bold; cursor: pointer; background-color: rgba(245, 158, 11, 0.1); }
+        .table-matrix td.cell-a { color: #EF4444; font-weight: bold; cursor: pointer; background-color: rgba(239, 68, 68, 0.1); }
+        .table-matrix td.cell-empty { color: var(--text-muted); cursor: pointer; }
+        
+        .nav-badge { position: absolute; right: 15px; top: 12px; background: #EF4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.65rem; font-weight: bold; }
+        .presensi-clickable { cursor: pointer; padding: 5px; border-radius: 5px; transition: background 0.3s; }
+        .presensi-clickable:hover { background: rgba(255, 255, 255, 0.1); }
+
+        .ql-toolbar { background: var(--bg-surface); border-color: var(--border-color) !important; border-top-left-radius: 8px; border-top-right-radius: 8px; }
+        .ql-container { background: var(--bg-card); border-color: var(--border-color) !important; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; color: var(--text-main); font-size: 1rem; min-height: 150px; }
+        .ql-stroke { stroke: var(--text-main) !important; } .ql-fill { fill: var(--text-main) !important; } .ql-picker { color: var(--text-main) !important; }
+
+        #ruang-ujian-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg-main); z-index: 1050; display: none; flex-direction: column; overflow-y:auto; }
+        .nav-soal-btn { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; background: var(--bg-surface); border: 1px solid var(--border-color); color: var(--text-main); }
+        .nav-soal-btn.answered { background: var(--primary); color: var(--btn-text); border-color: var(--primary); }
+        .nav-soal-btn.active { border: 2px solid #FFF; transform: scale(1.1); }
+        
+        #login-portal { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg-main); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        @media (max-width: 991.98px) { .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; } .sidebar.show { transform: translateX(0); } .main-content { margin-left: 0; max-width: 100%; padding: 1rem; } }
+
+        .progress-bar-custom { border-radius: 10px; background-color: var(--border-color); overflow: hidden; height: 10px; width: 100%; }
+        .progress-fill { height: 100%; background-color: var(--primary); transition: width 0.4s ease; }
         .badge-status-ujian { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; padding: 0.35rem 0.65rem; border-radius: 8px; font-size: 0.75rem;}
         
         .aheb-card { padding: 1rem; border-radius: 10px; background: var(--bg-surface); border: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        
-        /* TEMPELKAN KODE RAGU-RAGU DI SINI */
         .nav-soal-btn.doubtful { background: #F59E0B !important; color: #FFF !important; border-color: #F59E0B !important; }
-
+    </style>
+</head>
     </style>
 </head>
 <body class="theme-wk-project" id="app-body">
