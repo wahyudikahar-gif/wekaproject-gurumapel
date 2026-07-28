@@ -4129,9 +4129,8 @@ function bukaModalSoal() {
             });
             grid.innerHTML = html;
         }
-
-        // Fungsi sementara untuk merespons klik tombol "Kerjakan Sekarang"
-    async function masukRuangUjian(id) {
+// Fungsi sementara untuk merespons klik tombol "Kerjakan Sekarang"
+        async function masukRuangUjian(id) {
             // Tampilkan loading sebentar untuk menarik data dari cloud
             Swal.fire({
                 title: 'Memuat Soal...',
@@ -4206,57 +4205,13 @@ function bukaModalSoal() {
             let durasiMenit = parseInt(ujian.durasi) || 60;
             examEndTime = new Date().getTime() + (durasiMenit * 60 * 1000);
             startExamTimer();
-            // KODE BARU: Mengirim sinyal bahwa siswa sedang mengerjakan soal
+            
+            // Mengirim sinyal bahwa siswa sedang mengerjakan soal
             mulaiKirimStatusSedangUjian(currentExam.id, currentExam.soalList.length);
             renderNavigasiSoalGrid();
             muatSoalUjian();
         }
-        function mulaiKirimStatusSedangUjian(ujianId, totalSoal) {
-            if(intervalLiveSiswa) clearInterval(intervalLiveSiswa);
-            
-            intervalLiveSiswa = setInterval(async () => {
-                if(!currentSiswaData || !currentSiswaData.nisn) return;
 
-                let dijawab = 0;
-                for(let key in currentExamAnswers) {
-                    if(currentExamAnswers[key] !== undefined && currentExamAnswers[key] !== '') {
-                        dijawab++;
-                    }
-                }
-
-                // Sisa waktu dalam format mm:ss
-                let sisaDetik = Math.max(0, Math.floor((examEndTime - new Date().getTime()) / 1000));
-                let m = Math.floor(sisaDetik / 60);
-                let s = sisaDetik % 60;
-                let sisaWaktuStr = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-                
-                try {
-                    const monRef = window.fbDoc(window.db, "wk_project_data", "live_monitoring");
-                    const monSnap = await window.fbGetDoc(monRef);
-                    let liveData = monSnap.exists() && monSnap.data().dataArray ? monSnap.data().dataArray : [];
-                    
-                    const index = liveData.findIndex(d => d.nisn === currentSiswaData.nisn && d.ujianId === ujianId);
-                    const newData = {
-                        nisn: currentSiswaData.nisn,
-                        ujianId: ujianId,
-                        dijawab: dijawab,
-                        noSoalAktif: currentSoalIndex + 1,
-                        sisaWaktu: sisaWaktuStr,
-                        totalSoal: totalSoal,
-                        waktuUpdate: new Date().getTime()
-                    };
-
-                    if (index > -1) { liveData[index] = newData; } else { liveData.push(newData); }
-                    await window.fbSetDoc(monRef, { dataArray: liveData });
-                } catch (error) {
-                    console.log("Sync error:", error);
-                }
-            }, 3000); // Sinkronisasi setiap 3 detik
-        }
-
-        function hentikanSinyalUjian() {
-            if(intervalLiveSiswa) clearInterval(intervalLiveSiswa);
-        }
         function startExamTimer() {
             if(examTimerInterval) clearInterval(examTimerInterval);
             examTimerInterval = setInterval(() => {
@@ -4281,7 +4236,8 @@ function bukaModalSoal() {
                 }
             }, 1000);
         }
-     let currentExamDoubtful = {}; // Menyimpan data ragu-ragu
+
+        let currentExamDoubtful = {}; // Menyimpan data ragu-ragu
 
         function toggleRaguRagu() {
             if (!currentExamDoubtful[currentSoalIndex]) {
@@ -4319,7 +4275,8 @@ function bukaModalSoal() {
             muatSoalUjian();
             renderNavigasiSoalGrid();
         }
-function muatSoalUjian() {
+
+        function muatSoalUjian() {
             if(!currentExam || !currentExam.soalList) return;
             const soal = currentExam.soalList[currentSoalIndex];
             
@@ -4402,6 +4359,7 @@ function muatSoalUjian() {
             document.getElementById('btn-exam-prev').style.display = currentSoalIndex === 0 ? 'none' : 'block';
             document.getElementById('btn-exam-next').textContent = currentSoalIndex === currentExam.soalList.length - 1 ? 'Selesai / Terakhir' : 'Selanjutnya';
         }
+
         function simpanJawabanSiswa(val) {
             currentExamAnswers[currentSoalIndex] = val;
             renderNavigasiSoalGrid();
@@ -4446,8 +4404,10 @@ function muatSoalUjian() {
 
         function selesaikanUjian(isAutoTimeOut = false) {
             if(examTimerInterval) clearInterval(examTimerInterval);
-            // KODE BARU: Menghentikan pengiriman sinyal karena ujian sudah selesai
+            
+            // Menghentikan pengiriman sinyal karena ujian sudah selesai
             hentikanSinyalUjian();
+            
             const overlay = document.getElementById('ruang-ujian-overlay');
             if(overlay) overlay.style.display = 'none';
             isTakingExam = false;
@@ -4510,6 +4470,7 @@ function muatSoalUjian() {
             switchTab('view-cbt-siswa', document.getElementById('nav-siswa-cbt'));
             renderRiwayatUjianSiswa();
         }
+
         function renderRiwayatUjianSiswa() {
             const tbody = document.getElementById('tbody-riwayat-siswa');
             if(!tbody || !currentSiswaData) return;
@@ -4534,241 +4495,18 @@ function muatSoalUjian() {
             });
             tbody.innerHTML = html;
         }
-        // --- PENILAIAN ---
-        function renderTabelPenilaian() {
-            const tbody = document.getElementById('tbody-penilaian');
-            if(tbody) tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">Belum ada data nilai.</td></tr>';
-        }
-        function bukaModalTambahNilaiManual() { document.getElementById('form-nilai-manual').reset(); populateSiswaDropdowns(); new bootstrap.Modal(document.getElementById('modalNilaiManual')).show(); }
-        function simpanNilaiManual(e) { e.preventDefault(); showToast('Nilai Disimpan'); bootstrap.Modal.getInstance(document.getElementById('modalNilaiManual')).hide(); }
-        function resetSemuaNilai() { showToast('Filter Penilaian Direset'); }
-        function exportNilaiExcel() { showToast('Proses Export Nilai Excel...'); }
-        function triggerFilterJenisPenilaian() { renderTabelPenilaian(); }
-        function getPredikat(nilai) { if(nilai>=90) return 'A'; if(nilai>=80) return 'B'; if(nilai>=70) return 'C'; return 'D'; }
 
-     // --- LIVE MONITORING CBT ---
-        function populateMonitoringUjian() {
-            const dropdown = document.getElementById('mon-filter-ujian');
-            if(!dropdown) return;
-            dropdown.innerHTML = '<option value="">-- Pilih Ujian Aktif --</option>';
-            
-            // Tarik hanya ujian yang berstatus "Aktif"
-            const aktifUjian = ujianDB.filter(u => u.status === 'Aktif');
-            aktifUjian.forEach(u => {
-                dropdown.innerHTML += `<option value="${u.id}">${u.judul} (${u.kelas === 'ALL' ? 'Semua Kelas' : u.kelas})</option>`;
-            });
-        }
-
-        function initMonitoringUjian() {
-            currentPantauUjianId = document.getElementById('mon-filter-ujian').value;
-            renderMonitoringTableReal();
-        }
-
-        function startMonitoring() {
-            if(monitoringInterval) clearInterval(monitoringInterval);
-            // Refresh tabel otomatis setiap 5 detik
-            monitoringInterval = setInterval(() => {
-                if(currentPantauUjianId) renderMonitoringTableReal();
-            }, 5000); 
-        }
-
-        function stopMonitoring() {
-            if(monitoringInterval) clearInterval(monitoringInterval);
-        }
-async function renderMonitoringTableReal() {
-            const tbody = document.getElementById('tbody-monitoring');
-            if(!tbody) return;
-
-            if(!currentPantauUjianId) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Pilih Ujian Aktif terlebih dahulu pada dropdown di atas.</td></tr>';
-                return;
-            }
-
-            const ujian = ujianDB.find(u => u.id === currentPantauUjianId);
-            if(!ujian) return;
-
-            let liveData = [];
-            try {
-                if (window.db && window.fbGetDoc && window.fbDoc) {
-                    const huRef = window.fbDoc(window.db, "wk_project_data", "hasilujian");
-                    const huSnap = await window.fbGetDoc(huRef);
-                    if (huSnap.exists() && huSnap.data().dataArray) hasilUjianDB = huSnap.data().dataArray;
-
-                    const monRef = window.fbDoc(window.db, "wk_project_data", "live_monitoring");
-                    const monSnap = await window.fbGetDoc(monRef);
-                    if (monSnap.exists() && monSnap.data().dataArray) liveData = monSnap.data().dataArray;
-                }
-            } catch (e) {
-                console.warn("Gagal tarik live monitoring:", e);
-            }
-
-            const klsFilter = document.getElementById('mon-filter-kelas').value;
-            const search = document.getElementById('mon-search').value.toLowerCase();
-
-            let targetSiswa = databaseSiswa;
-            if(ujian.kelas !== 'ALL') targetSiswa = targetSiswa.filter(s => s.kelas === ujian.kelas);
-            if(klsFilter !== 'ALL') targetSiswa = targetSiswa.filter(s => s.kelas === klsFilter);
-            if(search) targetSiswa = targetSiswa.filter(s => s.nama.toLowerCase().includes(search) || s.nisn.includes(search));
-
-            let statHadir = 0, statSedang = 0, statSelesai = 0, statBelum = 0;
-            let html = '';
-
-            targetSiswa.forEach(s => {
-                const isSelesai = hasilUjianDB.find(h => h.nisn === s.nisn && h.ujianId === currentPantauUjianId);
-                const isLive = liveData.find(l => l.nisn === s.nisn && l.ujianId === currentPantauUjianId);
-                
-                let statusBadge = '';
-                let progress = 0;
-                let noSoalInfo = '-';
-                let sisaWaktuInfo = '-';
-                let aksiTombol = '';
-
-                if(isSelesai) {
-                    statusBadge = '<span class="badge bg-dark">⚫ Selesai</span>';
-                    progress = 100;
-                    statSelesai++;
-                    statHadir++;
-                    aksiTombol = `<button class="btn btn-sm btn-outline-success py-0 border-0" onclick="detailAksiSiswa('${s.nama}', 'Selesai', 'Skor Akhir: <b>${isSelesai.skor}</b>')" title="Lihat Status"><i class="bi bi-check-circle"></i></button>`;
-                } else if (isLive) {
-                    statusBadge = '<span class="badge bg-primary">🔵 Sedang Ujian</span>';
-                    let dijawab = isLive.dijawab || 0;
-                    let totalSoal = isLive.totalSoal || 1;
-                    progress = Math.round((dijawab / totalSoal) * 100);
-                    if(progress > 100) progress = 100;
-                    noSoalInfo = `Soal ${isLive.noSoalAktif || 1}`;
-                    sisaWaktuInfo = isLive.sisaWaktu || '-';
-                    statSedang++;
-                    statHadir++;
-                    aksiTombol = `<button class="btn btn-sm btn-outline-info py-0 border-0" onclick="detailAksiSiswa('${s.nama}', 'Sedang Ujian', 'Menjawab <b>${dijawab}</b> dari <b>${totalSoal}</b> soal.<br>Sisa Waktu: <b>${sisaWaktuInfo}</b>')" title="Lihat Detail"><i class="bi bi-eye"></i></button>`;
-                } else {
-                    statusBadge = '<span class="badge bg-warning text-dark">🟡 Belum Mulai</span>';
-                    statBelum++;
-                    aksiTombol = `<button class="btn btn-sm btn-outline-secondary py-0 border-0" onclick="detailAksiSiswa('${s.nama}', 'Belum Mulai', 'Siswa belum membuka soal.')" title="Belum Ada Data"><i class="bi bi-dash-circle"></i></button>`;
-                }
-
-                let pBar = `<div class="progress-bar-custom"><div class="progress-fill" style="width:${progress}%"></div></div><small>${progress}% (${isLive ? isLive.dijawab : 0}/${isLive ? isLive.totalSoal : 0})</small>`;
-
-                html += `<tr>
-                    <td class="fw-bold">${s.nama}</td>
-                    <td>${s.nisn}</td>
-                    <td><span class="badge border text-theme-primary">${s.kelas}</span></td>
-                    <td>${statusBadge}</td>
-                    <td>${pBar}</td>
-                    <td class="text-center fw-bold text-primary">${noSoalInfo}</td>
-                    <td class="text-center font-monospace fw-bold text-danger">${sisaWaktuInfo}</td>
-                    <td class="text-center">${aksiTombol}</td>
-                </tr>`;
-            });
-
-            if(targetSiswa.length === 0) html = '<tr><td colspan="8" class="text-center text-muted py-4">Tidak ada siswa yang sesuai kriteria/filter.</td></tr>';
-            tbody.innerHTML = html;
-
-            if(document.getElementById('mon-tot')) document.getElementById('mon-tot').textContent = targetSiswa.length;
-            if(document.getElementById('mon-hdr')) document.getElementById('mon-hdr').textContent = statHadir;
-            if(document.getElementById('mon-sdg')) document.getElementById('mon-sdg').textContent = statSedang;
-            if(document.getElementById('mon-sls')) document.getElementById('mon-sls').textContent = statSelesai;
-            if(document.getElementById('mon-blm')) document.getElementById('mon-blm').textContent = statBelum;
-        }
-        // Fungsi untuk Tombol Aksi Mata di Monitoring
-        function detailAksiSiswa(nama, status, info) {
-            Swal.fire({
-                title: 'Detail Status Ujian',
-                html: `<div class="text-start mt-3" style="font-size: 1rem;">
-                        <p><b>👤 Nama Siswa:</b> ${nama}</p>
-                        <p><b>📌 Status Saat Ini:</b> ${status}</p>
-                        <p><b>📝 Keterangan:</b> ${info}</p>
-                       </div>`,
-                icon: 'info',
-                confirmButtonColor: '#3085d6',
-                confirmButtonText: 'Tutup'
-            });
-        }
-        let intervalLiveSiswa = null;
-
-        // Fungsi Detak Jantung (Mengirim progress siswa diam-diam ke server)
-        function mulaiKirimStatusSedangUjian(ujianId, totalSoal) {
-            if(intervalLiveSiswa) clearInterval(intervalLiveSiswa);
-            
-            // Sinkronisasi otomatis ke server setiap 30 detik
-            intervalLiveSiswa = setInterval(async () => {
-                const currentUser = JSON.parse(localStorage.getItem('guruPro_currentUser') || '{}');
-                if(currentUser.role !== 'Siswa') return;
-
-                // Membaca elemen soal yang sudah diisi oleh siswa di layar
-                let dijawab = document.querySelectorAll('input[type="radio"]:checked').length;
-                
-                try {
-                    const monRef = window.fbDoc(window.db, "wk_project_data", "live_monitoring");
-                    const monSnap = await window.fbGetDoc(monRef);
-                    let liveData = monSnap.exists() ? monSnap.data().dataArray || [] : [];
-                    
-                    const index = liveData.findIndex(d => d.nisn === currentUser.username && d.ujianId === ujianId);
-                    const newData = {
-                        nisn: currentUser.username,
-                        ujianId: ujianId,
-                        dijawab: dijawab,
-                        totalSoal: totalSoal,
-                        waktuUpdate: new Date().getTime()
-                    };
-
-                    if (index > -1) { liveData[index] = newData; } else { liveData.push(newData); }
-                    await window.fbSetDoc(monRef, { dataArray: liveData });
-                } catch (error) {
-                    console.log("Sinyal latar belakang aman.");
-                }
-            }, 30000); // 30 detik (Optimal agar database Firebase gratisan Anda tidak jebol/limit).
-        }
-
-        function hentikanSinyalUjian() {
-            if(intervalLiveSiswa) clearInterval(intervalLiveSiswa);
-        }
-
-        async function forceRefreshMonitoring() { 
-            const btn = document.querySelector('button[onclick="forceRefreshMonitoring()"]');
-            if(btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Syncing...';
-            
-            await renderMonitoringTableReal();
-            
-            if(btn) btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Refresh Manual';
-            showToast('Data Monitoring Berhasil Disinkronkan dengan Cloud'); 
-        }
-        // --- FORUM DISKUSI ---
-        function renderForum() {
-            const chatBox = document.getElementById('chat-box');
-            if(chatBox) chatBox.innerHTML = '<div class="text-center text-muted py-5">Belum ada pesan di forum diskusi kelas ini.</div>';
-        }
-        function kirimPesan() {
-            const input = document.getElementById('chat-input');
-            if(input.value.trim() !== '') {
-                showToast('Pesan Terkirim');
-                input.value = '';
-            }
-        }
-        function addEmoji(emoji) {
-            const input = document.getElementById('chat-input');
-            input.value += emoji;
-        }
-        function handleChatFileSelect(e) { showToast('File siap diunggah'); }
-
-        // --- NAVIGASI UJIAN (SISWA) ---
-        function navigasiSoal(step) { showToast('Pindah Soal'); }
-        function konfirmasiSelesaiUjian() { 
-            Swal.fire({title: 'Selesai Ujian?', icon: 'warning', showCancelButton: true}).then(r => {
-                if(r.isConfirmed) {
-                    document.getElementById('ruang-ujian-overlay').style.display = 'none';
-                    showToast('Jawaban Berhasil Dikumpulkan');
-                }
-            });
-        }
+        // --- MENCEGAH ERROR AHEB ---
+        function downloadAHEBExcel() { showToast('Download Laporan AHEB'); }
         function submitTugasSiswa() { bootstrap.Modal.getInstance(document.getElementById('modalKumpulTugas')).hide(); showToast('Tugas Dikumpulkan'); }
 
-        // Mencegah error AHEB dari klik button di HTML
-        function downloadAHEBExcel() { showToast('Download Laporan AHEB'); }
+        // --- SISTEM DETAK JANTUNG UJIAN CBT ---
+        let intervalLiveSiswa = null;
 
-        // Fungsi Detak Jantung (Mengirim progress siswa diam-diam ke server)
         function mulaiKirimStatusSedangUjian(ujianId, totalSoal) {
             if(intervalLiveSiswa) clearInterval(intervalLiveSiswa);
             
+            // Sinkronisasi otomatis ke server setiap 5 detik
             intervalLiveSiswa = setInterval(async () => {
                 if(!currentSiswaData || !currentSiswaData.nisn) return;
 
@@ -4779,6 +4517,12 @@ async function renderMonitoringTableReal() {
                         dijawab++;
                     }
                 }
+
+                // Hitung sisa waktu
+                let sisaDetik = Math.max(0, Math.floor((examEndTime - new Date().getTime()) / 1000));
+                let m = Math.floor(sisaDetik / 60);
+                let s = sisaDetik % 60;
+                let sisaWaktuStr = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
                 
                 try {
                     const monRef = window.fbDoc(window.db, "wk_project_data", "live_monitoring");
@@ -4790,23 +4534,29 @@ async function renderMonitoringTableReal() {
                         nisn: currentSiswaData.nisn,
                         ujianId: ujianId,
                         dijawab: dijawab,
+                        noSoalAktif: currentSoalIndex + 1,
+                        sisaWaktu: sisaWaktuStr,
                         totalSoal: totalSoal,
                         waktuUpdate: new Date().getTime()
                     };
 
-                    if (index > -1) { liveData[index] = newData; } else { liveData.push(newData); }
+                    if (index > -1) { 
+                        liveData[index] = newData; 
+                    } else { 
+                        liveData.push(newData); 
+                    }
                     await window.fbSetDoc(monRef, { dataArray: liveData });
                 } catch (error) {
-                    console.log("Sinyal latar belakang aman.");
+                    console.log("Sinyal latar belakang aman.", error);
                 }
-            }, 5000); // Sinkronisasi setiap 5 detik saat ujian berlangsung
+            }, 5000); 
         }
 
         function hentikanSinyalUjian() {
             if(intervalLiveSiswa) clearInterval(intervalLiveSiswa);
         }
 
-        // Fungsi untuk Tombol Aksi Mata di Monitoring Guru
+        // --- FUNGSI UNTUK TOMBOL AKSI DI MONITORING GURU ---
         function detailAksiSiswa(nama, status, info) {
             Swal.fire({
                 title: 'Detail Status Ujian',
@@ -4823,3 +4573,4 @@ async function renderMonitoringTableReal() {
     </script>
 </body>
 </html>
+    
