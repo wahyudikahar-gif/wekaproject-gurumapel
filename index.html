@@ -4175,7 +4175,8 @@ function bukaModalSoal() {
             let durasiMenit = parseInt(ujian.durasi) || 60;
             examEndTime = new Date().getTime() + (durasiMenit * 60 * 1000);
             startExamTimer();
-            
+            // KODE BARU: Mengirim sinyal bahwa siswa sedang mengerjakan soal
+            mulaiKirimStatusSedangUjian(currentExam.id, currentExam.soalList.length);
             renderNavigasiSoalGrid();
             muatSoalUjian();
         }
@@ -4343,6 +4344,8 @@ function bukaModalSoal() {
 
         function selesaikanUjian(isAutoTimeOut = false) {
             if(examTimerInterval) clearInterval(examTimerInterval);
+            // KODE BARU: Menghentikan pengiriman sinyal karena ujian sudah selesai
+            hentikanSinyalUjian();
             const overlay = document.getElementById('ruang-ujian-overlay');
             if(overlay) overlay.style.display = 'none';
             isTakingExam = false;
@@ -4470,8 +4473,7 @@ function bukaModalSoal() {
         function stopMonitoring() {
             if(monitoringInterval) clearInterval(monitoringInterval);
         }
-
-        async function renderMonitoringTableReal() {
+async function renderMonitoringTableReal() {
             const tbody = document.getElementById('tbody-monitoring');
             if(!tbody) return;
 
@@ -4483,15 +4485,19 @@ function bukaModalSoal() {
             const ujian = ujianDB.find(u => u.id === currentPantauUjianId);
             if(!ujian) return;
 
-            // 1. SEDOT DATA TERBARU DARI CLOUD FIREBASE AGAR REAL-TIME
+            // 1. SEDOT DATA SELESAI (hasilujian) & DATA SEDANG MENGERJAKAN (live_monitoring)
+            let liveData = [];
             try {
                 if (window.db && window.fbGetDoc && window.fbDoc) {
+                    // Ambil yang sudah selesai
                     const huRef = window.fbDoc(window.db, "wk_project_data", "hasilujian");
                     const huSnap = await window.fbGetDoc(huRef);
-                    if (huSnap.exists() && huSnap.data().dataArray) {
-                        hasilUjianDB = huSnap.data().dataArray;
-                        localStorage.setItem('guruPro_hasilujian', JSON.stringify(hasilUjianDB));
-                    }
+                    if (huSnap.exists() && huSnap.data().dataArray) hasilUjianDB = huSnap.data().dataArray;
+
+                    // Ambil sinyal detak jantung (sedang ujian)
+                    const monRef = window.fbDoc(window.db, "wk_project_data", "live_monitoring");
+                    const monSnap = await window.fbGetDoc(monRef);
+                    if (monSnap.exists() && monSnap.data().dataArray) liveData = monSnap.data().dataArray;
                 }
             } catch (e) {
                 console.warn("Gagal tarik live monitoring:", e);
@@ -4500,7 +4506,6 @@ function bukaModalSoal() {
             const klsFilter = document.getElementById('mon-filter-kelas').value;
             const search = document.getElementById('mon-search').value.toLowerCase();
 
-            // 2. Filter Siswa Berdasarkan Kelas Ujian
             let targetSiswa = databaseSiswa;
             if(ujian.kelas !== 'ALL') targetSiswa = targetSiswa.filter(s => s.kelas === ujian.kelas);
             if(klsFilter !== 'ALL') targetSiswa = targetSiswa.filter(s => s.kelas === klsFilter);
@@ -4510,22 +4515,33 @@ function bukaModalSoal() {
             let html = '';
 
             targetSiswa.forEach(s => {
-                // Cek apakah siswa sudah selesai mengumpulkan jawaban
                 const isSelesai = hasilUjianDB.find(h => h.nisn === s.nisn && h.ujianId === currentPantauUjianId);
+                const isLive = liveData.find(l => l.nisn === s.nisn && l.ujianId === currentPantauUjianId);
                 
                 let statusBadge = '';
                 let progress = 0;
                 let skor = '-';
+                let aksiTombol = '';
 
                 if(isSelesai) {
                     statusBadge = '<span class="badge bg-dark">⚫ Selesai</span>';
                     progress = 100;
                     skor = isSelesai.skor;
                     statSelesai++;
-                    statHadir++; // Jika selesai, otomatis dihitung hadir
+                    statHadir++;
+                    aksiTombol = `<button class="btn btn-sm btn-outline-success py-0 border-0" onclick="detailAksiSiswa('${s.nama}', 'Selesai', 'Telah mengumpulkan dengan Skor Akhir: <b>${skor}</b>')" title="Lihat Detail"><i class="bi bi-check-circle"></i></button>`;
+                } else if (isLive) {
+                    statusBadge = '<span class="badge bg-primary">🔵 Sedang Ujian</span>';
+                    let dijawab = isLive.dijawab || 0;
+                    let totalSoal = isLive.totalSoal || 1;
+                    progress = Math.round((dijawab / totalSoal) * 100);
+                    if(progress > 100) progress = 100;
+                    statHadir++; // Dihitung Hadir
+                    aksiTombol = `<button class="btn btn-sm btn-outline-info py-0 border-0" onclick="detailAksiSiswa('${s.nama}', 'Sedang Mengerjakan', 'Telah menjawab <b>${dijawab}</b> dari <b>${totalSoal}</b> soal.')" title="Lihat Progress"><i class="bi bi-eye"></i></button>`;
                 } else {
-                    statusBadge = '<span class="badge bg-warning text-dark">🟡 Belum / Sedang Ujian</span>';
+                    statusBadge = '<span class="badge bg-warning text-dark">🟡 Belum Mulai</span>';
                     statBelum++;
+                    aksiTombol = `<button class="btn btn-sm btn-outline-secondary py-0 border-0" onclick="detailAksiSiswa('${s.nama}', 'Belum Mulai', 'Siswa belum login atau belum menekan tombol Mulai Ujian.')" title="Belum Ada Data"><i class="bi bi-dash-circle"></i></button>`;
                 }
 
                 let pBar = `<div class="progress-bar-custom"><div class="progress-fill" style="width:${progress}%"></div></div><small>${progress}%</small>`;
@@ -4538,20 +4554,70 @@ function bukaModalSoal() {
                     <td>${pBar}</td>
                     <td class="text-center fw-bold text-success">${skor}</td>
                     <td class="text-center">-</td>
-                    <td class="text-center">
-                        <button class="btn btn-sm btn-outline-info py-0 border-0" title="Lihat Status"><i class="bi bi-eye"></i></button>
-                    </td>
+                    <td class="text-center">${aksiTombol}</td>
                 </tr>`;
             });
 
             if(targetSiswa.length === 0) html = '<tr><td colspan="8" class="text-center text-muted py-4">Tidak ada siswa yang sesuai kriteria/filter.</td></tr>';
             tbody.innerHTML = html;
 
-            // 3. Update Angka Indikator di Atas Tabel
             if(document.getElementById('mon-tot')) document.getElementById('mon-tot').textContent = targetSiswa.length;
             if(document.getElementById('mon-hdr')) document.getElementById('mon-hdr').textContent = statHadir;
             if(document.getElementById('mon-sls')) document.getElementById('mon-sls').textContent = statSelesai;
             if(document.getElementById('mon-blm')) document.getElementById('mon-blm').textContent = statBelum;
+        }
+        // Fungsi untuk Tombol Aksi Mata di Monitoring
+        function detailAksiSiswa(nama, status, info) {
+            Swal.fire({
+                title: 'Detail Status Ujian',
+                html: `<div class="text-start mt-3" style="font-size: 1rem;">
+                        <p><b>👤 Nama Siswa:</b> ${nama}</p>
+                        <p><b>📌 Status Saat Ini:</b> ${status}</p>
+                        <p><b>📝 Keterangan:</b> ${info}</p>
+                       </div>`,
+                icon: 'info',
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'Tutup'
+            });
+        }
+        let intervalLiveSiswa = null;
+
+        // Fungsi Detak Jantung (Mengirim progress siswa diam-diam ke server)
+        function mulaiKirimStatusSedangUjian(ujianId, totalSoal) {
+            if(intervalLiveSiswa) clearInterval(intervalLiveSiswa);
+            
+            // Sinkronisasi otomatis ke server setiap 30 detik
+            intervalLiveSiswa = setInterval(async () => {
+                const currentUser = JSON.parse(localStorage.getItem('guruPro_currentUser') || '{}');
+                if(currentUser.role !== 'Siswa') return;
+
+                // Membaca elemen soal yang sudah diisi oleh siswa di layar
+                let dijawab = document.querySelectorAll('input[type="radio"]:checked').length;
+                
+                try {
+                    const monRef = window.fbDoc(window.db, "wk_project_data", "live_monitoring");
+                    const monSnap = await window.fbGetDoc(monRef);
+                    let liveData = monSnap.exists() ? monSnap.data().dataArray || [] : [];
+                    
+                    const index = liveData.findIndex(d => d.nisn === currentUser.username && d.ujianId === ujianId);
+                    const newData = {
+                        nisn: currentUser.username,
+                        ujianId: ujianId,
+                        dijawab: dijawab,
+                        totalSoal: totalSoal,
+                        waktuUpdate: new Date().getTime()
+                    };
+
+                    if (index > -1) { liveData[index] = newData; } else { liveData.push(newData); }
+                    await window.fbSetDoc(monRef, { dataArray: liveData });
+                } catch (error) {
+                    console.log("Sinyal latar belakang aman.");
+                }
+            }, 30000); // 30 detik (Optimal agar database Firebase gratisan Anda tidak jebol/limit).
+        }
+
+        function hentikanSinyalUjian() {
+            if(intervalLiveSiswa) clearInterval(intervalLiveSiswa);
         }
 
         async function forceRefreshMonitoring() { 
@@ -4595,7 +4661,63 @@ function bukaModalSoal() {
 
         // Mencegah error AHEB dari klik button di HTML
         function downloadAHEBExcel() { showToast('Download Laporan AHEB'); }
+let intervalLiveSiswa = null;
 
+        // Fungsi Detak Jantung (Mengirim progress siswa diam-diam ke server)
+        function mulaiKirimStatusSedangUjian(ujianId, totalSoal) {
+            if(intervalLiveSiswa) clearInterval(intervalLiveSiswa);
+            
+            intervalLiveSiswa = setInterval(async () => {
+                if(!currentSiswaData || !currentSiswaData.nisn) return;
+
+                // Hitung berapa soal yang sudah dijawab siswa
+                let dijawab = 0;
+                for(let key in currentExamAnswers) {
+                    if(currentExamAnswers[key] !== undefined && currentExamAnswers[key] !== '') {
+                        dijawab++;
+                    }
+                }
+                
+                try {
+                    const monRef = window.fbDoc(window.db, "wk_project_data", "live_monitoring");
+                    const monSnap = await window.fbGetDoc(monRef);
+                    let liveData = monSnap.exists() && monSnap.data().dataArray ? monSnap.data().dataArray : [];
+                    
+                    const index = liveData.findIndex(d => d.nisn === currentSiswaData.nisn && d.ujianId === ujianId);
+                    const newData = {
+                        nisn: currentSiswaData.nisn,
+                        ujianId: ujianId,
+                        dijawab: dijawab,
+                        totalSoal: totalSoal,
+                        waktuUpdate: new Date().getTime()
+                    };
+
+                    if (index > -1) { liveData[index] = newData; } else { liveData.push(newData); }
+                    await window.fbSetDoc(monRef, { dataArray: liveData });
+                } catch (error) {
+                    console.log("Sinyal latar belakang aman.");
+                }
+            }, 5000); // Sinkronisasi setiap 5 detik saat ujian berlangsung
+        }
+
+        function hentikanSinyalUjian() {
+            if(intervalLiveSiswa) clearInterval(intervalLiveSiswa);
+        }
+
+        // Fungsi untuk Tombol Aksi Mata di Monitoring Guru
+        function detailAksiSiswa(nama, status, info) {
+            Swal.fire({
+                title: 'Detail Status Ujian',
+                html: `<div class="text-start mt-3" style="font-size: 1rem;">
+                        <p><b>👤 Nama Siswa:</b> ${nama}</p>
+                        <p><b>📌 Status Saat Ini:</b> ${status}</p>
+                        <p><b>📝 Keterangan:</b> ${info}</p>
+                       </div>`,
+                icon: 'info',
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'Tutup'
+            });
+        }
     </script>
 </body>
 </html>
