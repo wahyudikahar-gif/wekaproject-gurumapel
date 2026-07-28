@@ -38,7 +38,17 @@
             --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
             --radius-sm: 10px; --radius-md: 16px; --glass-blur: blur(16px);
         }
+        /* ... kode-kode CSS Anda yang lain ... */
+        .badge-status-ujian { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; padding: 0.35rem 0.65rem; border-radius: 8px; font-size: 0.75rem;}
         
+        .aheb-card { padding: 1rem; border-radius: 10px; background: var(--bg-surface); border: 1px solid var(--border-color); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        
+        /* TEMPELKAN KODE RAGU-RAGU DI SINI */
+        .nav-soal-btn.doubtful { background: #F59E0B !important; color: #FFF !important; border-color: #F59E0B !important; }
+
+    </style>
+</head>
+<body class="theme-wk-project" id="app-body">
         body.theme-wk-project { --bg-main: #F3F4F6; --bg-surface: #FFFFFF; --bg-card: rgba(255, 255, 255, 0.98); --bg-sidebar: #FFFFFF; --primary: #0284C7; --secondary: #F59E0B; --text-main: #1E293B; --text-muted: #64748B; --border-color: rgba(2, 132, 199, 0.15); --btn-text: #FFFFFF; --pattern-color: #0284C7; --shadow-md: 0 10px 20px -5px rgba(0, 0, 0, 0.1); }
         body.theme-dark-gold { --bg-main: #140E08; --bg-surface: #1E1610; --bg-card: rgba(38, 28, 20, 0.85); --bg-sidebar: #19120C; --primary: #D4AF37; --secondary: #8C6239; --text-main: #FFFFFF; --text-muted: #A39688; --border-color: rgba(212, 175, 55, 0.2); --btn-text: #000000; --pattern-color: #D4AF37; }
         body.theme-dayak-red { --bg-main: #1A0909; --bg-surface: #2b1111; --bg-card: rgba(50, 15, 15, 0.85); --bg-sidebar: #220B0B; --primary: #E53935; --secondary: #B71C1C; --text-main: #FFFFFF; --text-muted: #FFCDD2; --border-color: rgba(229, 57, 53, 0.3); --btn-text: #FFFFFF; --pattern-color: #E53935; }
@@ -1114,8 +1124,9 @@
                         <div id="exam-run-soal-content" class="mb-4" style="font-size: 1.1rem; line-height: 1.6;"></div>
                         <div id="exam-run-jawaban-area" class="mb-4"></div>
                         <div class="d-flex justify-content-between mt-5 pt-3 border-top" style="border-color: var(--border-color)!important;">
-                            <button class="btn btn-outline-secondary px-4" id="btn-exam-prev" onclick="navigasiSoal(-1)">Sebelumnya</button>
-                            <button class="btn btn-theme-primary px-4" id="btn-exam-next" onclick="navigasiSoal(1)">Selanjutnya</button>
+                           <button class="btn btn-outline-secondary px-4" id="btn-exam-prev" onclick="navigasiSoal(-1)">Sebelumnya</button>
+<button class="btn btn-warning text-dark fw-bold px-3" id="btn-exam-ragu" onclick="toggleRaguRagu()"><i class="bi bi-question-circle"></i> Ragu-Ragu</button>
+<button class="btn btn-theme-primary px-4" id="btn-exam-next" onclick="navigasiSoal(1)">Selanjutnya</button>
                         </div>
                     </div>
                 </div>
@@ -1678,7 +1689,7 @@
             }
         })();
 
-        function bukaFileViewer(url, title) {
+       function bukaFileViewer(url, title) {
             if(!url) return Swal.fire('Error', 'Tautan tidak tersedia.', 'error');
             
             document.getElementById('modalViewerTitle').textContent = title || 'Pratinjau File';
@@ -1689,36 +1700,56 @@
 
             setTimeout(() => {
                 const lowerUrl = url.toLowerCase();
+                
+                // 1. Pratinjau Gambar
                 if(lowerUrl.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
                     body.innerHTML = `<img src="${url}" style="max-width:100%; max-height:100%; object-fit:contain;">`;
                 } 
-                else if(lowerUrl.match(/\.(mp4|webm|ogg)$/i)) {
+                // 2. Pratinjau Video Lokal (MP4, WebM, OGG)
+                else if(lowerUrl.match(/\.(mp4|webm|ogg)$/i) || lowerUrl.startsWith('data:video')) {
                     body.innerHTML = `<video src="${url}" controls autoplay style="max-width:100%; max-height:100%;"></video>`;
                 } 
+                // 3. Pratinjau YouTube dengan Fallback Tombol Darurat
                 else if(lowerUrl.includes('youtube.com') || lowerUrl.includes('youtu.be')) {
-                    let videoId = lowerUrl.split('v=')[1] || lowerUrl.split('youtu.be/')[1];
+                    let videoId = '';
+                    if (lowerUrl.includes('youtu.be/')) {
+                        videoId = lowerUrl.split('youtu.be/')[1].split('?')[0];
+                    } else if (lowerUrl.includes('v=')) {
+                        videoId = lowerUrl.split('v=')[1].split('&')[0];
+                    } else if (lowerUrl.includes('embed/')) {
+                        videoId = lowerUrl.split('embed/')[1].split('?')[0];
+                    }
+
                     if(videoId) {
-                        let ampersandPosition = videoId.indexOf('&');
-                        if(ampersandPosition !== -1) videoId = videoId.substring(0, ampersandPosition);
-                        body.innerHTML = `<iframe width="100%" height="100%" src="https://www.youtube.com/embed/${videoId}?autoplay=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+                        body.innerHTML = `
+                            <div class="d-flex flex-column align-items-center justify-content-center w-100 h-100 p-2" style="background: #111;">
+                                <div class="w-100 flex-grow-1 mb-2" style="max-height: 75vh;">
+                                    <iframe width="100%" height="100%" src="https://www.youtube.com/embed/${videoId}?autoplay=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border:none; border-radius:8px;"></iframe>
+                                </div>
+                                <div class="text-center pb-2">
+                                    <small class="text-warning d-block mb-1">Jika video di atas tertulis "Video tidak tersedia", itu karena pemilik video memblokir pemutaran di luar aplikasi YouTube.</small>
+                                    <a href="${url}" target="_blank" class="btn btn-sm btn-danger fw-bold"><i class="bi bi-youtube"></i> Buka Langsung di YouTube / Tab Baru</a>
+                                </div>
+                            </div>`;
                     } else {
-                        body.innerHTML = `<a href="${url}" target="_blank" class="btn btn-primary">Buka Link YouTube <i class="bi bi-box-arrow-up-right"></i></a>`;
+                        body.innerHTML = `<div class="text-center text-white"><p>Format tautan YouTube tidak valid.</p><a href="${url}" target="_blank" class="btn btn-primary">Buka di Tab Baru <i class="bi bi-box-arrow-up-right"></i></a></div>`;
                     }
                 } 
+                // 4. Pratinjau Dokumen (PDF, Word, Excel)
                 else if(lowerUrl.match(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx)$/i)) {
                     body.innerHTML = `<iframe src="https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true" width="100%" height="100%" style="border:none;"></iframe>`;
                 } 
+                // 5. Tautan Website Umum
                 else {
                     body.innerHTML = `
-                        <div class="text-center text-white">
-                            <i class="bi bi-file-earmark-break display-1 mb-3 d-block text-muted"></i>
-                            <p class="fs-5">Tipe file ini tidak mendukung pratinjau langsung di dalam aplikasi.</p>
-                            <a href="${url}" target="_blank" class="btn btn-theme-primary btn-lg mt-2">Buka di Tab Baru <i class="bi bi-box-arrow-up-right"></i></a>
+                        <div class="text-center text-white p-4">
+                            <i class="bi bi-globe display-1 mb-3 d-block text-info"></i>
+                            <p class="fs-5">Tautan ini mengarah ke halaman web/video eksternal.</p>
+                            <a href="${url}" target="_blank" class="btn btn-theme-primary btn-lg mt-2">Buka Tautan di Tab Baru <i class="bi bi-box-arrow-up-right"></i></a>
                         </div>`;
                 }
-            }, 600);
+            }, 400);
         }
-
         window.startFirebaseApp = async function() {
             await initApp();
         };
@@ -1727,7 +1758,29 @@
             applySettingsToUI();
             renderKategoriListUI();
             document.getElementById('filter-nilai-mapel').value = sysMapel;
-
+document.addEventListener('visibilitychange', function() {
+                if (isTakingExam && document.hidden) {
+                    cheatWarnings++;
+                    if (cheatWarnings >= 3) {
+                        Swal.fire({
+                            title: 'Dikeluarkan dari Ujian!',
+                            text: 'Anda terdeteksi berpindah tab/aplikasi sebanyak 3 kali. Jawaban Anda dikumpulkan secara paksa.',
+                            icon: 'error',
+                            allowOutsideClick: false,
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            selesaikanUjian(true);
+                        });
+                    } else {
+                        Swal.fire({
+                            title: '⚠️ Peringatan Anti-Cheat!',
+                            text: `Dilarang berpindah Tab Browser / Aplikasi! Pelanggaran ke-${cheatWarnings} dari maksimal 3 kali.`,
+                            icon: 'warning',
+                            confirmButtonText: 'Saya Mengerti & Kembali Ujian'
+                        });
+                    }
+                }
+            });
             try {
                 const collections = [
                     { id: 'databaseSiswa', ref: 'databaseSiswa' },
@@ -1840,8 +1893,9 @@
             }
         }
 
-        function saveData(type) { 
+async function saveData(type) { 
             try {
+                // 1. Simpan ke LocalStorage perangkat guru
                 if(type === 'siswa' || !type) localStorage.setItem('guruPro_databaseSiswa', JSON.stringify(databaseSiswa)); 
                 if(type === 'jurnal' || !type) localStorage.setItem('guruPro_jurnal', JSON.stringify(jurnalMengajar)); 
                 if(type === 'forum' || !type) localStorage.setItem('guruPro_forum', JSON.stringify(forumDiskusi)); 
@@ -1854,28 +1908,37 @@
                 if(type === 'hasilujian' || !type) localStorage.setItem('guruPro_hasilujian', JSON.stringify(hasilUjianDB)); 
                 if(type === 'apresiasi' || !type) localStorage.setItem('guruPro_apresiasi', JSON.stringify(apresiasiDB));
 
+                // 2. Kirim dan Sinkronkan secara langsung ke Cloud Firebase
                 if(window.db && window.fbSetDoc && window.fbDoc) {
-                    const syncToFirebase = (docId, arrayData) => {
-                        const docRef = window.fbDoc(window.db, "wk_project_data", docId);
-                        window.fbSetDoc(docRef, { dataArray: arrayData }, { merge: true }).catch(err => console.warn("Firebase sync offline notice:", err));
+                    const syncToFirebase = async (docId, arrayData) => {
+                        try {
+                            const docRef = window.fbDoc(window.db, "wk_project_data", docId);
+                            await window.fbSetDoc(docRef, { dataArray: arrayData }, { merge: true });
+                            console.log("Berhasil upload ke Firebase Cloud:", docId);
+                        } catch(err) {
+                            console.error("GAGAL upload Firebase untuk " + docId, err);
+                            Swal.fire('Peringatan Cloud', `Gagal menyinkronkan ${docId} ke internet. Periksa koneksi atau rules Firebase Anda.`, 'warning');
+                        }
                     };
-                    if(type === 'siswa' || !type) syncToFirebase('databaseSiswa', databaseSiswa);
-                    if(type === 'jurnal' || !type) syncToFirebase('jurnal', jurnalMengajar);
-                    if(type === 'forum' || !type) syncToFirebase('forum', forumDiskusi);
-                    if(type === 'tugas' || !type) syncToFirebase('tugas', tugasDB);
-                    if(type === 'nilai' || !type) syncToFirebase('nilai', nilaiDB);
-                    if(type === 'pengumuman' || !type) syncToFirebase('pengumuman', pengumumanDB);
-                    if(type === 'materi' || !type) syncToFirebase('materi', materiDB);
-                    if(type === 'banksoal' || !type) syncToFirebase('banksoal', bankSoalDB);
-                    if(type === 'ujian' || !type) syncToFirebase('ujian', ujianDB);
-                    if(type === 'hasilujian' || !type) syncToFirebase('hasilujian', hasilUjianDB);
-                    if(type === 'apresiasi' || !type) syncToFirebase('apresiasi', apresiasiDB);
+
+                    if(type === 'siswa' || !type) await syncToFirebase('databaseSiswa', databaseSiswa);
+                    if(type === 'jurnal' || !type) await syncToFirebase('jurnal', jurnalMengajar);
+                    if(type === 'forum' || !type) await syncToFirebase('forum', forumDiskusi);
+                    if(type === 'tugas' || !type) await syncToFirebase('tugas', tugasDB);
+                    if(type === 'nilai' || !type) await syncToFirebase('nilai', nilaiDB);
+                    if(type === 'pengumuman' || !type) await syncToFirebase('pengumuman', pengumumanDB);
+                    if(type === 'materi' || !type) await syncToFirebase('materi', materiDB);
+                    if(type === 'banksoal' || !type) await syncToFirebase('banksoal', bankSoalDB);
+                    if(type === 'ujian' || !type) await syncToFirebase('ujian', ujianDB);
+                    if(type === 'hasilujian' || !type) await syncToFirebase('hasilujian', hasilUjianDB);
+                    if(type === 'apresiasi' || !type) await syncToFirebase('apresiasi', apresiasiDB);
+                } else {
+                    console.warn("Firebase belum terhubung (Mode Offline Lokal).");
                 }
             } catch(e) {
                 console.error("Gagal menyimpan data:", e);
             }
         }
-
         function sortDatabase() { databaseSiswa.sort((a, b) => { if(a.kelas === b.kelas) return a.nama.localeCompare(b.nama); return a.kelas.localeCompare(b.kelas); }); }
 
         function populateDropdowns() {
@@ -3547,7 +3610,7 @@
 
             if (tipe === 'PG') {
                 html = `
-                    <label class="small text-muted fw-bold d-block mb-3">Pilihan Ganda (A, B, C, D, E)</label>
+                    <label class="small text-muted fw-bold d-block mb-3">Pilihan Ganda (A, B, C, D)</label>
                     <div class="input-group mb-2">
                         <span class="input-group-text bg-success text-white border-0 pg-label" id="label-pg-a" style="width: 45px; justify-content: center; font-weight: bold;">A</span>
                         <input type="text" class="form-control form-control-custom" id="pg-a" required>
@@ -3564,10 +3627,6 @@
                         <span class="input-group-text bg-secondary text-white border-0 pg-label" id="label-pg-d" style="width: 45px; justify-content: center; font-weight: bold;">D</span>
                         <input type="text" class="form-control form-control-custom" id="pg-d" required>
                     </div>
-                    <div class="input-group mb-3">
-                        <span class="input-group-text bg-secondary text-white border-0 pg-label" id="label-pg-e" style="width: 45px; justify-content: center; font-weight: bold;">E</span>
-                        <input type="text" class="form-control form-control-custom" id="pg-e" required>
-                    </div>
                     <div class="mt-3 p-3 bg-white rounded border">
                         <label class="small text-muted fw-bold d-block mb-2">Kunci Jawaban Benar</label>
                         <select class="form-select form-select-custom border-primary fw-bold" id="pg-kunci" onchange="updateWarnaKunciPG(this.value)" required>
@@ -3575,7 +3634,6 @@
                             <option value="B">B</option>
                             <option value="C">C</option>
                             <option value="D">D</option>
-                            <option value="E">E</option>
                         </select>
                     </div>
                 `;
@@ -4025,11 +4083,10 @@ function bukaModalSoal() {
             
             new bootstrap.Modal(document.getElementById('modalJadwalUjian')).show();
         }
-               function renderUjianSiswa() {
+           function renderUjianSiswa() {
             const grid = document.getElementById('grid-ujian-siswa-aktif');
             if(!grid) return;
 
-            // Cari ujian yang statusnya 'Aktif' dan kelasnya cocok dengan kelas siswa
             let filtered = Array.isArray(ujianDB) ? ujianDB : [];
             filtered = filtered.filter(u => u.status === 'Aktif' && (u.kelas === 'ALL' || u.kelas === currentSiswaData.kelas));
 
@@ -4042,17 +4099,24 @@ function bukaModalSoal() {
             if(document.getElementById('empty-ujian-siswa-msg')) document.getElementById('empty-ujian-siswa-msg').classList.add('d-none');
 
             let html = '';
-            // Tampilkan ujian dari database
             [...filtered].reverse().forEach(u => {
                 const jmlSoal = u.soalIds ? u.soalIds.length : 0;
-                
-                // Format penanggalan
                 const tglMulai = new Date(u.tglMulai).toLocaleString('id-ID', {dateStyle:'medium', timeStyle:'short'});
                 const tglSelesai = new Date(u.tglSelesai).toLocaleString('id-ID', {dateStyle:'medium', timeStyle:'short'});
                 
+                // CEK APAKAH SISWA SUDAH PERNAH MENYELESAIKAN UJIAN INI
+                const sudahSelesai = Array.isArray(hasilUjianDB) && hasilUjianDB.some(h => h.nisn === currentSiswaData.nisn && h.ujianId === u.id);
+
+                let btnAction = '';
+                if (sudahSelesai) {
+                    btnAction = `<button class="btn btn-secondary w-100 fw-bold" disabled><i class="bi bi-check-circle-fill"></i> Ujian Sudah Selesai</button>`;
+                } else {
+                    btnAction = `<button class="btn btn-theme-primary w-100 fw-bold" onclick="masukRuangUjian('${u.id}')"><i class="bi bi-play-circle-fill"></i> Kerjakan Sekarang</button>`;
+                }
+
                 html += `
                 <div class="col-md-6 col-lg-4">
-                    <div class="glass-card h-100 position-relative p-3" style="border-top: 4px solid var(--primary);">
+                    <div class="glass-card h-100 position-relative p-3" style="border-top: 4px solid ${sudahSelesai ? '#6c757d' : 'var(--primary)'};">
                         <div class="d-flex justify-content-between mb-2">
                             <span class="badge bg-primary">${u.jenis}</span>
                             <span class="badge bg-warning text-dark"><i class="bi bi-clock"></i> ${u.durasi} Menit</span>
@@ -4066,31 +4130,363 @@ function bukaModalSoal() {
                             <span class="small fw-bold text-muted">Total Soal:</span>
                             <span class="fw-bold fs-6 text-theme-primary">${jmlSoal} Butir</span>
                         </div>
-                        <button class="btn btn-theme-primary w-100 fw-bold" onclick="masukRuangUjian('${u.id}')"><i class="bi bi-play-circle-fill"></i> Kerjakan Sekarang</button>
+                        ${btnAction}
                     </div>
                 </div>`;
             });
-            
             grid.innerHTML = html;
         }
 
         // Fungsi sementara untuk merespons klik tombol "Kerjakan Sekarang"
-        function masukRuangUjian(id) {
-            const ujian = ujianDB.find(u => u.id === id);
-            if(!ujian) return;
-            
+    async function masukRuangUjian(id) {
+            // Tampilkan loading sebentar untuk menarik data dari cloud
             Swal.fire({
-                title: 'Mulai Ujian?',
-                text: `Anda akan mengerjakan ${ujian.judul}. Pastikan koneksi internet stabil!`,
-                icon: 'question',
+                title: 'Memuat Soal...',
+                text: 'Menghubungkan ke server cloud...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            // Tarik data terbaru langsung dari Cloud Firebase ke perangkat siswa
+            try {
+                if (window.db && window.fbGetDoc && window.fbDoc) {
+                    const bsRef = window.fbDoc(window.db, "wk_project_data", "banksoal");
+                    const bsSnap = await window.fbGetDoc(bsRef);
+                    if (bsSnap.exists() && bsSnap.data().dataArray) {
+                        bankSoalDB = bsSnap.data().dataArray;
+                    }
+
+                    const ujRef = window.fbDoc(window.db, "wk_project_data", "ujian");
+                    const ujSnap = await window.fbGetDoc(ujRef);
+                    if (ujSnap.exists() && ujSnap.data().dataArray) {
+                        ujianDB = ujSnap.data().dataArray;
+                    }
+                }
+            } catch (e) {
+                console.warn("Gagal sinkronisasi live:", e);
+            }
+
+            Swal.close();
+
+            const ujian = ujianDB.find(u => u.id === id);
+            if(!ujian) {
+                return Swal.fire('Error', 'Jadwal ujian tidak ditemukan di server.', 'error');
+            }
+            
+            currentExam = ujian;
+            currentExamAnswers = {};
+            currentSoalIndex = 0;
+            isTakingExam = true;
+            
+            currentExam.soalList = [];
+            
+            // 1. Ambil soal berdasarkan ID yang dicentang guru
+            if (ujian.soalIds && Array.isArray(ujian.soalIds) && ujian.soalIds.length > 0) {
+                ujian.soalIds.forEach(sId => {
+                    let s = bankSoalDB.find(bs => bs.id === sId);
+                    if(s) currentExam.soalList.push(s);
+                });
+            }
+            
+            // 2. Cadangan Otomatis: Jika ID tidak cocok, ambil semua soal dari Bank Soal
+            if (currentExam.soalList.length === 0 && bankSoalDB && bankSoalDB.length > 0) {
+                currentExam.soalList = [...bankSoalDB];
+            }
+            
+            if (currentExam.soalList.length === 0) {
+                return Swal.fire('Error', 'Bank soal di server cloud masih kosong! Pastikan guru sudah menyimpan soal dan aturan Firebase sudah diatur (Allow Read/Write: true).', 'error');
+            }
+            
+            // Acak soal jika pengaturannya 'Ya'
+            if (ujian.acak === 'Ya') {
+                currentExam.soalList.sort(() => Math.random() - 0.5);
+            }
+            
+            // Tampilkan overlay ruang ujian penuh
+            const overlay = document.getElementById('ruang-ujian-overlay');
+            if(overlay) overlay.style.display = 'flex';
+            
+            document.getElementById('exam-run-judul').textContent = ujian.judul;
+            document.getElementById('exam-run-siswa').textContent = `${currentSiswaData.nama} - Kelas ${currentSiswaData.kelas}`;
+            
+            // Jalankan Timer Ujian
+            let durasiMenit = parseInt(ujian.durasi) || 60;
+            examEndTime = new Date().getTime() + (durasiMenit * 60 * 1000);
+            startExamTimer();
+            // KODE BARU: Mengirim sinyal bahwa siswa sedang mengerjakan soal
+            mulaiKirimStatusSedangUjian(currentExam.id, currentExam.soalList.length);
+            renderNavigasiSoalGrid();
+            muatSoalUjian();
+        }
+        function startExamTimer() {
+            if(examTimerInterval) clearInterval(examTimerInterval);
+            examTimerInterval = setInterval(() => {
+                let now = new Date().getTime();
+                let distance = examEndTime - now;
+                
+                if (distance < 0) {
+                    clearInterval(examTimerInterval);
+                    if (typeof selesaikanUjian === 'function') {
+                        selesaikanUjian(true); // Auto-submit jika waktu habis
+                    }
+                    return;
+                }
+                
+                let hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                let seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                
+                const timerEl = document.getElementById('exam-run-timer');
+                if(timerEl) {
+                    timerEl.textContent = `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
+                }
+            }, 1000);
+        }
+     let currentExamDoubtful = {}; // Menyimpan data ragu-ragu
+
+        function toggleRaguRagu() {
+            if (!currentExamDoubtful[currentSoalIndex]) {
+                currentExamDoubtful[currentSoalIndex] = true;
+            } else {
+                delete currentExamDoubtful[currentSoalIndex];
+            }
+            renderNavigasiSoalGrid();
+        }
+
+        function renderNavigasiSoalGrid() {
+            const grid = document.getElementById('exam-run-nav-grid');
+            if(!grid || !currentExam || !currentExam.soalList) return;
+            
+            let html = '';
+            currentExam.soalList.forEach((s, idx) => {
+                let isAnswered = currentExamAnswers[idx] !== undefined && currentExamAnswers[idx] !== '' && JSON.stringify(currentExamAnswers[idx]) !== '{}';
+                let isDoubt = currentExamDoubtful[idx] === true;
+                
+                let activeClass = idx === currentSoalIndex ? 'active border-primary' : '';
+                let statusClass = '';
+                if (isDoubt) {
+                    statusClass = 'doubtful'; // Warna Kuning Ragu-ragu
+                } else if (isAnswered) {
+                    statusClass = 'answered'; // Warna Biru/Hijau Terjawab
+                }
+                
+                html += `<div class="nav-soal-btn ${statusClass} ${activeClass}" onclick="pilihNomorSoal(${idx})">${idx + 1}</div>`;
+            });
+            grid.innerHTML = html;
+        }
+
+        function pilihNomorSoal(idx) {
+            currentSoalIndex = idx;
+            muatSoalUjian();
+            renderNavigasiSoalGrid();
+        }
+
+        function muatSoalUjian() {
+            if(!currentExam || !currentExam.soalList) return;
+            const soal = currentExam.soalList[currentSoalIndex];
+            
+            document.getElementById('exam-run-nosoal').textContent = currentSoalIndex + 1;
+            
+            let tipeLabel = 'Pilihan Ganda';
+            if(soal.tipe === 'BS') tipeLabel = 'Benar / Salah Kompleks';
+            else if(soal.tipe === 'MJ') tipeLabel = 'Menjodohkan';
+            else if(soal.tipe === 'IS') tipeLabel = 'Isian Singkat';
+            else if(soal.tipe === 'ES') tipeLabel = 'Essay';
+            document.getElementById('exam-run-tipesoal').textContent = tipeLabel;
+            
+            // Masukkan teks pertanyaan utama
+            document.getElementById('exam-run-soal-content').innerHTML = soal.pertanyaan;
+            
+            const jawabArea = document.getElementById('exam-run-jawaban-area');
+            let jHtml = '';
+            let savedAns = currentExamAnswers[currentSoalIndex] || '';
+            
+            // Render opsi berdasarkan jenis tipe soal
+            if (soal.tipe === 'PG') {
+                const opsi = soal.opsi || {};
+                ['A', 'B', 'C', 'D', 'E'].forEach(k => {
+                    if (opsi[k]) {
+                        let checked = savedAns === k ? 'checked' : '';
+                        jHtml += `
+                        <div class="form-check mb-3 p-3 rounded border" style="background: var(--bg-surface); cursor:pointer;">
+                            <input class="form-check-input" type="radio" name="pg-ans" id="opt-${k}" value="${k}" ${checked} onclick="simpanJawabanSiswa('${k}')">
+                            <label class="form-check-label w-100 fw-bold" for="opt-${k}" style="cursor:pointer;">
+                                <span class="badge bg-primary me-2">${k}</span> ${opsi[k]}
+                            </label>
+                        </div>`;
+                    }
+                });
+            } else if (soal.tipe === 'BS') {
+                let savedObj = typeof savedAns === 'object' ? savedAns : {};
+                jHtml += `<div class="small text-muted mb-3 fw-bold">Tentukan Benar atau Salah untuk tiap pernyataan berikut:</div>`;
+                (soal.opsi || []).forEach((item, i) => {
+                    let val = savedObj[i] || 'Benar';
+                    jHtml += `
+                    <div class="p-3 mb-2 rounded border" style="background: var(--bg-surface);">
+                        <div class="mb-2 fw-bold text-theme-primary">${i+1}. ${item.pernyataan}</div>
+                        <select class="form-select form-select-sm form-select-custom" onchange="simpanJawabanKompleksBS(${i}, this.value)">
+                            <option value="Benar" ${val==='Benar'?'selected':''}>Benar</option>
+                            <option value="Salah" ${val==='Salah'?'selected':''}>Salah</option>
+                        </select>
+                    </div>`;
+                });
+            } else if (soal.tipe === 'MJ') {
+                let savedObj = typeof savedAns === 'object' ? savedAns : {};
+                jHtml += `<div class="small text-muted mb-3 fw-bold">Isikan pasangan yang cocok untuk masing-masing premis:</div>`;
+                (soal.opsi || []).forEach((item, i) => {
+                    let val = savedObj[i] || '';
+                    jHtml += `
+                    <div class="p-3 mb-2 rounded border row g-2 align-items-center" style="background: var(--bg-surface);">
+                        <div class="col-6 fw-bold">${i+1}. ${item.premis}</div>
+                        <div class="col-6">
+                            <input type="text" class="form-control form-control-sm form-control-custom" value="${val}" placeholder="Ketik pasangan..." oninput="simpanJawabanKompleksMJ(${i}, this.value)">
+                        </div>
+                    </div>`;
+                });
+            } else if (soal.tipe === 'IS' || soal.tipe === 'ES') {
+                let placeholder = soal.tipe === 'IS' ? 'Ketik jawaban singkat...' : 'Tulis jawaban essay Anda di sini...';
+                let tagInput = soal.tipe === 'IS' ? `<input type="text" class="form-control form-control-custom" value="${savedAns}" placeholder="${placeholder}" oninput="simpanJawabanSiswa(this.value)">` : `<textarea class="form-control form-control-custom" rows="5" placeholder="${placeholder}" oninput="simpanJawabanSiswa(this.value)">${savedAns}</textarea>`;
+                jHtml += `<div class="mb-3">${tagInput}</div>`;
+            }
+            
+            jawabArea.innerHTML = jHtml;
+            
+            // Pengaturan tombol navigasi bawah
+            document.getElementById('btn-exam-prev').style.display = currentSoalIndex === 0 ? 'none' : 'block';
+            document.getElementById('btn-exam-next').textContent = currentSoalIndex === currentExam.soalList.length - 1 ? 'Selesai / Terakhir' : 'Selanjutnya';
+        }
+
+        function simpanJawabanSiswa(val) {
+            currentExamAnswers[currentSoalIndex] = val;
+            renderNavigasiSoalGrid();
+        }
+
+        function simpanJawabanKompleksBS(idx, val) {
+            if(typeof currentExamAnswers[currentSoalIndex] !== 'object') currentExamAnswers[currentSoalIndex] = {};
+            currentExamAnswers[currentSoalIndex][idx] = val;
+            renderNavigasiSoalGrid();
+        }
+
+        function simpanJawabanKompleksMJ(idx, val) {
+            if(typeof currentExamAnswers[currentSoalIndex] !== 'object') currentExamAnswers[currentSoalIndex] = {};
+            currentExamAnswers[currentSoalIndex][idx] = val;
+            renderNavigasiSoalGrid();
+        }
+
+        function navigasiSoal(step) {
+            let newIdx = currentSoalIndex + step;
+            if (newIdx >= 0 && newIdx < currentExam.soalList.length) {
+                currentSoalIndex = newIdx;
+                muatSoalUjian();
+                renderNavigasiSoalGrid();
+            } else if (newIdx >= currentExam.soalList.length) {
+                konfirmasiSelesaiUjian();
+            }
+        }
+
+        function konfirmasiSelesaiUjian() {
+            Swal.fire({
+                title: 'Kumpulkan Jawaban Ujian?',
+                text: 'Pastikan seluruh soal telah dikerjakan dengan benar.',
+                icon: 'warning',
                 showCancelButton: true,
-                confirmButtonText: 'Ya, Mulai!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    Swal.fire('Info', 'Mesin Ujian (overlay soal) sudah terhubung ke tombol ini. UI Pengerjaan Soal siap diaktifkan!', 'info');
-                    // Di sinilah nanti logika hitung mundur dan render soal per nomor akan dijalankan
+                confirmButtonText: 'Ya, Kumpulkan Sekarang!'
+            }).then(r => {
+                if(r.isConfirmed) {
+                    selesaikanUjian(false);
                 }
             });
+        }
+
+        function selesaikanUjian(isAutoTimeOut = false) {
+            if(examTimerInterval) clearInterval(examTimerInterval);
+            // KODE BARU: Menghentikan pengiriman sinyal karena ujian sudah selesai
+            hentikanSinyalUjian();
+            const overlay = document.getElementById('ruang-ujian-overlay');
+            if(overlay) overlay.style.display = 'none';
+            isTakingExam = false;
+            
+            // Koreksi otomatis untuk soal PG & Isian Singkat
+            let totalPoinDiperoleh = 0;
+            let totalBobotMaks = 0;
+            
+            currentExam.soalList.forEach((soal, idx) => {
+                let bobot = parseInt(soal.bobot) || 10;
+                totalBobotMaks += bobot;
+                let ans = currentExamAnswers[idx];
+                
+                if (soal.tipe === 'PG') {
+                    if (ans && String(ans).trim().toUpperCase() === String(soal.kunci).trim().toUpperCase()) {
+                        totalPoinDiperoleh += bobot;
+                    }
+                } else if (soal.tipe === 'IS') {
+                    if (ans && String(ans).trim().toLowerCase() === String(soal.kunci).trim().toLowerCase()) {
+                        totalPoinDiperoleh += bobot;
+                    }
+                } else {
+                    // Untuk soal kompleks/essay diberikan apresiasi nilai jika terjawab
+                    if (ans !== undefined && ans !== '' && JSON.stringify(ans) !== '{}') {
+                        totalPoinDiperoleh += Math.round(bobot * 0.7); 
+                    }
+                }
+            });
+            
+            let skorAkhir = totalBobotMaks > 0 ? Math.round((totalPoinDiperoleh / totalBobotMaks) * 100) : 0;
+            let kkm = parseInt(currentExam.kkm) || 75;
+            let predikat = getPredikat(skorAkhir);
+            let ket = skorAkhir >= kkm ? 'Lulus / Tuntas' : 'Remedial / Belum Tuntas';
+            
+            const hasilObj = {
+                id: 'HSU-' + Date.now(),
+                ujianId: currentExam.id,
+                judulUjian: currentExam.judul,
+                nisn: currentSiswaData.nisn,
+                namaSiswa: currentSiswaData.nama,
+                kelas: currentSiswaData.kelas,
+                waktuSelesai: new Date().toLocaleString('id-ID'),
+                skor: skorAkhir,
+                predikat: predikat,
+                keterangan: ket,
+                jawabanSiswa: currentExamAnswers
+            };
+            
+            if(!Array.isArray(hasilUjianDB)) hasilUjianDB = [];
+            hasilUjianDB.push(hasilObj);
+            saveData('hasilujian');
+            
+            Swal.fire({
+                title: isAutoTimeOut ? 'Waktu Ujian Telah Habis!' : 'Ujian Selesai!',
+                text: `Skor Akhir Anda: ${skorAkhir} (${ket})`,
+                icon: 'success'
+            });
+            
+            // Arahkan otomatis ke tab riwayat ujian siswa
+            switchTab('view-cbt-siswa', document.getElementById('nav-siswa-cbt'));
+            renderRiwayatUjianSiswa();
+        }
+        function renderRiwayatUjianSiswa() {
+            const tbody = document.getElementById('tbody-riwayat-siswa');
+            if(!tbody || !currentSiswaData) return;
+            
+            let myRiwayat = Array.isArray(hasilUjianDB) ? hasilUjianDB.filter(h => h.nisn === currentSiswaData.nisn) : [];
+            if(myRiwayat.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Belum ada riwayat ujian selesai.</td></tr>';
+                return;
+            }
+            
+            let html = '';
+            [...myRiwayat].reverse().forEach(h => {
+                let badgeKet = h.keterangan.includes('Lulus') ? '<span class="badge bg-success">Tuntas</span>' : '<span class="badge bg-danger">Remedial</span>';
+                html += `
+                <tr>
+                    <td class="fw-bold">${h.judulUjian}</td>
+                    <td><small>${h.waktuSelesai}</small></td>
+                    <td class="fw-bold fs-6 text-theme-primary">${h.skor}</td>
+                    <td><span class="badge bg-secondary">${h.predikat}</span></td>
+                    <td>${badgeKet}</td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
         }
         // --- PENILAIAN ---
         function renderTabelPenilaian() {
@@ -4104,14 +4500,191 @@ function bukaModalSoal() {
         function triggerFilterJenisPenilaian() { renderTabelPenilaian(); }
         function getPredikat(nilai) { if(nilai>=90) return 'A'; if(nilai>=80) return 'B'; if(nilai>=70) return 'C'; return 'D'; }
 
-        // --- LIVE MONITORING CBT ---
-        function populateMonitoringUjian() { }
-        function startMonitoring() { }
-        function stopMonitoring() { }
-        function initMonitoringUjian() { }
-        function renderMonitoringTableReal() { }
-        function forceRefreshMonitoring() { showToast('Data Diperbarui'); }
+     // --- LIVE MONITORING CBT ---
+        function populateMonitoringUjian() {
+            const dropdown = document.getElementById('mon-filter-ujian');
+            if(!dropdown) return;
+            dropdown.innerHTML = '<option value="">-- Pilih Ujian Aktif --</option>';
+            
+            // Tarik hanya ujian yang berstatus "Aktif"
+            const aktifUjian = ujianDB.filter(u => u.status === 'Aktif');
+            aktifUjian.forEach(u => {
+                dropdown.innerHTML += `<option value="${u.id}">${u.judul} (${u.kelas === 'ALL' ? 'Semua Kelas' : u.kelas})</option>`;
+            });
+        }
 
+        function initMonitoringUjian() {
+            currentPantauUjianId = document.getElementById('mon-filter-ujian').value;
+            renderMonitoringTableReal();
+        }
+
+        function startMonitoring() {
+            if(monitoringInterval) clearInterval(monitoringInterval);
+            // Refresh tabel otomatis setiap 5 detik
+            monitoringInterval = setInterval(() => {
+                if(currentPantauUjianId) renderMonitoringTableReal();
+            }, 5000); 
+        }
+
+        function stopMonitoring() {
+            if(monitoringInterval) clearInterval(monitoringInterval);
+        }
+async function renderMonitoringTableReal() {
+            const tbody = document.getElementById('tbody-monitoring');
+            if(!tbody) return;
+
+            if(!currentPantauUjianId) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Pilih Ujian Aktif terlebih dahulu pada dropdown di atas.</td></tr>';
+                return;
+            }
+
+            const ujian = ujianDB.find(u => u.id === currentPantauUjianId);
+            if(!ujian) return;
+
+            // 1. SEDOT DATA SELESAI (hasilujian) & DATA SEDANG MENGERJAKAN (live_monitoring)
+            let liveData = [];
+            try {
+                if (window.db && window.fbGetDoc && window.fbDoc) {
+                    // Ambil yang sudah selesai
+                    const huRef = window.fbDoc(window.db, "wk_project_data", "hasilujian");
+                    const huSnap = await window.fbGetDoc(huRef);
+                    if (huSnap.exists() && huSnap.data().dataArray) hasilUjianDB = huSnap.data().dataArray;
+
+                    // Ambil sinyal detak jantung (sedang ujian)
+                    const monRef = window.fbDoc(window.db, "wk_project_data", "live_monitoring");
+                    const monSnap = await window.fbGetDoc(monRef);
+                    if (monSnap.exists() && monSnap.data().dataArray) liveData = monSnap.data().dataArray;
+                }
+            } catch (e) {
+                console.warn("Gagal tarik live monitoring:", e);
+            }
+
+            const klsFilter = document.getElementById('mon-filter-kelas').value;
+            const search = document.getElementById('mon-search').value.toLowerCase();
+
+            let targetSiswa = databaseSiswa;
+            if(ujian.kelas !== 'ALL') targetSiswa = targetSiswa.filter(s => s.kelas === ujian.kelas);
+            if(klsFilter !== 'ALL') targetSiswa = targetSiswa.filter(s => s.kelas === klsFilter);
+            if(search) targetSiswa = targetSiswa.filter(s => s.nama.toLowerCase().includes(search) || s.nisn.includes(search));
+
+            let statHadir = 0, statSelesai = 0, statBelum = 0;
+            let html = '';
+
+            targetSiswa.forEach(s => {
+                const isSelesai = hasilUjianDB.find(h => h.nisn === s.nisn && h.ujianId === currentPantauUjianId);
+                const isLive = liveData.find(l => l.nisn === s.nisn && l.ujianId === currentPantauUjianId);
+                
+                let statusBadge = '';
+                let progress = 0;
+                let skor = '-';
+                let aksiTombol = '';
+
+                if(isSelesai) {
+                    statusBadge = '<span class="badge bg-dark">⚫ Selesai</span>';
+                    progress = 100;
+                    skor = isSelesai.skor;
+                    statSelesai++;
+                    statHadir++;
+                    aksiTombol = `<button class="btn btn-sm btn-outline-success py-0 border-0" onclick="detailAksiSiswa('${s.nama}', 'Selesai', 'Telah mengumpulkan dengan Skor Akhir: <b>${skor}</b>')" title="Lihat Detail"><i class="bi bi-check-circle"></i></button>`;
+                } else if (isLive) {
+                    statusBadge = '<span class="badge bg-primary">🔵 Sedang Ujian</span>';
+                    let dijawab = isLive.dijawab || 0;
+                    let totalSoal = isLive.totalSoal || 1;
+                    progress = Math.round((dijawab / totalSoal) * 100);
+                    if(progress > 100) progress = 100;
+                    statHadir++; // Dihitung Hadir
+                    aksiTombol = `<button class="btn btn-sm btn-outline-info py-0 border-0" onclick="detailAksiSiswa('${s.nama}', 'Sedang Mengerjakan', 'Telah menjawab <b>${dijawab}</b> dari <b>${totalSoal}</b> soal.')" title="Lihat Progress"><i class="bi bi-eye"></i></button>`;
+                } else {
+                    statusBadge = '<span class="badge bg-warning text-dark">🟡 Belum Mulai</span>';
+                    statBelum++;
+                    aksiTombol = `<button class="btn btn-sm btn-outline-secondary py-0 border-0" onclick="detailAksiSiswa('${s.nama}', 'Belum Mulai', 'Siswa belum login atau belum menekan tombol Mulai Ujian.')" title="Belum Ada Data"><i class="bi bi-dash-circle"></i></button>`;
+                }
+
+                let pBar = `<div class="progress-bar-custom"><div class="progress-fill" style="width:${progress}%"></div></div><small>${progress}%</small>`;
+
+                html += `<tr>
+                    <td class="fw-bold">${s.nama}</td>
+                    <td>${s.nisn}</td>
+                    <td><span class="badge border text-theme-primary">${s.kelas}</span></td>
+                    <td>${statusBadge}</td>
+                    <td>${pBar}</td>
+                    <td class="text-center fw-bold text-success">${skor}</td>
+                    <td class="text-center">-</td>
+                    <td class="text-center">${aksiTombol}</td>
+                </tr>`;
+            });
+
+            if(targetSiswa.length === 0) html = '<tr><td colspan="8" class="text-center text-muted py-4">Tidak ada siswa yang sesuai kriteria/filter.</td></tr>';
+            tbody.innerHTML = html;
+
+            if(document.getElementById('mon-tot')) document.getElementById('mon-tot').textContent = targetSiswa.length;
+            if(document.getElementById('mon-hdr')) document.getElementById('mon-hdr').textContent = statHadir;
+            if(document.getElementById('mon-sls')) document.getElementById('mon-sls').textContent = statSelesai;
+            if(document.getElementById('mon-blm')) document.getElementById('mon-blm').textContent = statBelum;
+        }
+        // Fungsi untuk Tombol Aksi Mata di Monitoring
+        function detailAksiSiswa(nama, status, info) {
+            Swal.fire({
+                title: 'Detail Status Ujian',
+                html: `<div class="text-start mt-3" style="font-size: 1rem;">
+                        <p><b>👤 Nama Siswa:</b> ${nama}</p>
+                        <p><b>📌 Status Saat Ini:</b> ${status}</p>
+                        <p><b>📝 Keterangan:</b> ${info}</p>
+                       </div>`,
+                icon: 'info',
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'Tutup'
+            });
+        }
+        let intervalLiveSiswa = null;
+
+        // Fungsi Detak Jantung (Mengirim progress siswa diam-diam ke server)
+        function mulaiKirimStatusSedangUjian(ujianId, totalSoal) {
+            if(intervalLiveSiswa) clearInterval(intervalLiveSiswa);
+            
+            // Sinkronisasi otomatis ke server setiap 30 detik
+            intervalLiveSiswa = setInterval(async () => {
+                const currentUser = JSON.parse(localStorage.getItem('guruPro_currentUser') || '{}');
+                if(currentUser.role !== 'Siswa') return;
+
+                // Membaca elemen soal yang sudah diisi oleh siswa di layar
+                let dijawab = document.querySelectorAll('input[type="radio"]:checked').length;
+                
+                try {
+                    const monRef = window.fbDoc(window.db, "wk_project_data", "live_monitoring");
+                    const monSnap = await window.fbGetDoc(monRef);
+                    let liveData = monSnap.exists() ? monSnap.data().dataArray || [] : [];
+                    
+                    const index = liveData.findIndex(d => d.nisn === currentUser.username && d.ujianId === ujianId);
+                    const newData = {
+                        nisn: currentUser.username,
+                        ujianId: ujianId,
+                        dijawab: dijawab,
+                        totalSoal: totalSoal,
+                        waktuUpdate: new Date().getTime()
+                    };
+
+                    if (index > -1) { liveData[index] = newData; } else { liveData.push(newData); }
+                    await window.fbSetDoc(monRef, { dataArray: liveData });
+                } catch (error) {
+                    console.log("Sinyal latar belakang aman.");
+                }
+            }, 30000); // 30 detik (Optimal agar database Firebase gratisan Anda tidak jebol/limit).
+        }
+
+        function hentikanSinyalUjian() {
+            if(intervalLiveSiswa) clearInterval(intervalLiveSiswa);
+        }
+
+        async function forceRefreshMonitoring() { 
+            const btn = document.querySelector('button[onclick="forceRefreshMonitoring()"]');
+            if(btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Syncing...';
+            
+            await renderMonitoringTableReal();
+            
+            if(btn) btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Refresh Manual';
+            showToast('Data Monitoring Berhasil Disinkronkan dengan Cloud'); 
+        }
         // --- FORUM DISKUSI ---
         function renderForum() {
             const chatBox = document.getElementById('chat-box');
@@ -4145,6 +4718,61 @@ function bukaModalSoal() {
         // Mencegah error AHEB dari klik button di HTML
         function downloadAHEBExcel() { showToast('Download Laporan AHEB'); }
 
+        // Fungsi Detak Jantung (Mengirim progress siswa diam-diam ke server)
+        function mulaiKirimStatusSedangUjian(ujianId, totalSoal) {
+            if(intervalLiveSiswa) clearInterval(intervalLiveSiswa);
+            
+            intervalLiveSiswa = setInterval(async () => {
+                if(!currentSiswaData || !currentSiswaData.nisn) return;
+
+                // Hitung berapa soal yang sudah dijawab siswa
+                let dijawab = 0;
+                for(let key in currentExamAnswers) {
+                    if(currentExamAnswers[key] !== undefined && currentExamAnswers[key] !== '') {
+                        dijawab++;
+                    }
+                }
+                
+                try {
+                    const monRef = window.fbDoc(window.db, "wk_project_data", "live_monitoring");
+                    const monSnap = await window.fbGetDoc(monRef);
+                    let liveData = monSnap.exists() && monSnap.data().dataArray ? monSnap.data().dataArray : [];
+                    
+                    const index = liveData.findIndex(d => d.nisn === currentSiswaData.nisn && d.ujianId === ujianId);
+                    const newData = {
+                        nisn: currentSiswaData.nisn,
+                        ujianId: ujianId,
+                        dijawab: dijawab,
+                        totalSoal: totalSoal,
+                        waktuUpdate: new Date().getTime()
+                    };
+
+                    if (index > -1) { liveData[index] = newData; } else { liveData.push(newData); }
+                    await window.fbSetDoc(monRef, { dataArray: liveData });
+                } catch (error) {
+                    console.log("Sinyal latar belakang aman.");
+                }
+            }, 5000); // Sinkronisasi setiap 5 detik saat ujian berlangsung
+        }
+
+        function hentikanSinyalUjian() {
+            if(intervalLiveSiswa) clearInterval(intervalLiveSiswa);
+        }
+
+        // Fungsi untuk Tombol Aksi Mata di Monitoring Guru
+        function detailAksiSiswa(nama, status, info) {
+            Swal.fire({
+                title: 'Detail Status Ujian',
+                html: `<div class="text-start mt-3" style="font-size: 1rem;">
+                        <p><b>👤 Nama Siswa:</b> ${nama}</p>
+                        <p><b>📌 Status Saat Ini:</b> ${status}</p>
+                        <p><b>📝 Keterangan:</b> ${info}</p>
+                       </div>`,
+                icon: 'info',
+                confirmButtonColor: '#3085d6',
+                confirmButtonText: 'Tutup'
+            });
+        }
     </script>
 </body>
 </html>
