@@ -4095,7 +4095,7 @@ function bukaModalSoal() {
         }
 
         // Fungsi sementara untuk merespons klik tombol "Kerjakan Sekarang"
-       function masukRuangUjian(id) {
+      function masukRuangUjian(id) {
             const ujian = ujianDB.find(u => u.id === id);
             if(!ujian) return;
             
@@ -4130,7 +4130,7 @@ function bukaModalSoal() {
                         currentExam.soalList.sort(() => Math.random() - 0.5);
                     }
                     
-                    // Tampilkan overlay ruang ujian penuh
+                    // Tampilkan overlay ruang ujian penuh secara langsung
                     const overlay = document.getElementById('ruang-ujian-overlay');
                     if(overlay) overlay.style.display = 'flex';
                     
