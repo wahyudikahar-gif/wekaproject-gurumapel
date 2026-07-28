@@ -4211,6 +4211,52 @@ function bukaModalSoal() {
             renderNavigasiSoalGrid();
             muatSoalUjian();
         }
+        function mulaiKirimStatusSedangUjian(ujianId, totalSoal) {
+            if(intervalLiveSiswa) clearInterval(intervalLiveSiswa);
+            
+            intervalLiveSiswa = setInterval(async () => {
+                if(!currentSiswaData || !currentSiswaData.nisn) return;
+
+                let dijawab = 0;
+                for(let key in currentExamAnswers) {
+                    if(currentExamAnswers[key] !== undefined && currentExamAnswers[key] !== '') {
+                        dijawab++;
+                    }
+                }
+
+                // Sisa waktu dalam format mm:ss
+                let sisaDetik = Math.max(0, Math.floor((examEndTime - new Date().getTime()) / 1000));
+                let m = Math.floor(sisaDetik / 60);
+                let s = sisaDetik % 60;
+                let sisaWaktuStr = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+                
+                try {
+                    const monRef = window.fbDoc(window.db, "wk_project_data", "live_monitoring");
+                    const monSnap = await window.fbGetDoc(monRef);
+                    let liveData = monSnap.exists() && monSnap.data().dataArray ? monSnap.data().dataArray : [];
+                    
+                    const index = liveData.findIndex(d => d.nisn === currentSiswaData.nisn && d.ujianId === ujianId);
+                    const newData = {
+                        nisn: currentSiswaData.nisn,
+                        ujianId: ujianId,
+                        dijawab: dijawab,
+                        noSoalAktif: currentSoalIndex + 1,
+                        sisaWaktu: sisaWaktuStr,
+                        totalSoal: totalSoal,
+                        waktuUpdate: new Date().getTime()
+                    };
+
+                    if (index > -1) { liveData[index] = newData; } else { liveData.push(newData); }
+                    await window.fbSetDoc(monRef, { dataArray: liveData });
+                } catch (error) {
+                    console.log("Sync error:", error);
+                }
+            }, 3000); // Sinkronisasi setiap 3 detik
+        }
+
+        function hentikanSinyalUjian() {
+            if(intervalLiveSiswa) clearInterval(intervalLiveSiswa);
+        }
         function startExamTimer() {
             if(examTimerInterval) clearInterval(examTimerInterval);
             examTimerInterval = setInterval(() => {
@@ -4534,16 +4580,13 @@ async function renderMonitoringTableReal() {
             const ujian = ujianDB.find(u => u.id === currentPantauUjianId);
             if(!ujian) return;
 
-            // 1. SEDOT DATA SELESAI (hasilujian) & DATA SEDANG MENGERJAKAN (live_monitoring)
             let liveData = [];
             try {
                 if (window.db && window.fbGetDoc && window.fbDoc) {
-                    // Ambil yang sudah selesai
                     const huRef = window.fbDoc(window.db, "wk_project_data", "hasilujian");
                     const huSnap = await window.fbGetDoc(huRef);
                     if (huSnap.exists() && huSnap.data().dataArray) hasilUjianDB = huSnap.data().dataArray;
 
-                    // Ambil sinyal detak jantung (sedang ujian)
                     const monRef = window.fbDoc(window.db, "wk_project_data", "live_monitoring");
                     const monSnap = await window.fbGetDoc(monRef);
                     if (monSnap.exists() && monSnap.data().dataArray) liveData = monSnap.data().dataArray;
@@ -4560,7 +4603,7 @@ async function renderMonitoringTableReal() {
             if(klsFilter !== 'ALL') targetSiswa = targetSiswa.filter(s => s.kelas === klsFilter);
             if(search) targetSiswa = targetSiswa.filter(s => s.nama.toLowerCase().includes(search) || s.nisn.includes(search));
 
-            let statHadir = 0, statSelesai = 0, statBelum = 0;
+            let statHadir = 0, statSedang = 0, statSelesai = 0, statBelum = 0;
             let html = '';
 
             targetSiswa.forEach(s => {
@@ -4569,31 +4612,34 @@ async function renderMonitoringTableReal() {
                 
                 let statusBadge = '';
                 let progress = 0;
-                let skor = '-';
+                let noSoalInfo = '-';
+                let sisaWaktuInfo = '-';
                 let aksiTombol = '';
 
                 if(isSelesai) {
                     statusBadge = '<span class="badge bg-dark">⚫ Selesai</span>';
                     progress = 100;
-                    skor = isSelesai.skor;
                     statSelesai++;
                     statHadir++;
-                    aksiTombol = `<button class="btn btn-sm btn-outline-success py-0 border-0" onclick="detailAksiSiswa('${s.nama}', 'Selesai', 'Telah mengumpulkan dengan Skor Akhir: <b>${skor}</b>')" title="Lihat Detail"><i class="bi bi-check-circle"></i></button>`;
+                    aksiTombol = `<button class="btn btn-sm btn-outline-success py-0 border-0" onclick="detailAksiSiswa('${s.nama}', 'Selesai', 'Skor Akhir: <b>${isSelesai.skor}</b>')" title="Lihat Status"><i class="bi bi-check-circle"></i></button>`;
                 } else if (isLive) {
                     statusBadge = '<span class="badge bg-primary">🔵 Sedang Ujian</span>';
                     let dijawab = isLive.dijawab || 0;
                     let totalSoal = isLive.totalSoal || 1;
                     progress = Math.round((dijawab / totalSoal) * 100);
                     if(progress > 100) progress = 100;
-                    statHadir++; // Dihitung Hadir
-                    aksiTombol = `<button class="btn btn-sm btn-outline-info py-0 border-0" onclick="detailAksiSiswa('${s.nama}', 'Sedang Mengerjakan', 'Telah menjawab <b>${dijawab}</b> dari <b>${totalSoal}</b> soal.')" title="Lihat Progress"><i class="bi bi-eye"></i></button>`;
+                    noSoalInfo = `Soal ${isLive.noSoalAktif || 1}`;
+                    sisaWaktuInfo = isLive.sisaWaktu || '-';
+                    statSedang++;
+                    statHadir++;
+                    aksiTombol = `<button class="btn btn-sm btn-outline-info py-0 border-0" onclick="detailAksiSiswa('${s.nama}', 'Sedang Ujian', 'Menjawab <b>${dijawab}</b> dari <b>${totalSoal}</b> soal.<br>Sisa Waktu: <b>${sisaWaktuInfo}</b>')" title="Lihat Detail"><i class="bi bi-eye"></i></button>`;
                 } else {
                     statusBadge = '<span class="badge bg-warning text-dark">🟡 Belum Mulai</span>';
                     statBelum++;
-                    aksiTombol = `<button class="btn btn-sm btn-outline-secondary py-0 border-0" onclick="detailAksiSiswa('${s.nama}', 'Belum Mulai', 'Siswa belum login atau belum menekan tombol Mulai Ujian.')" title="Belum Ada Data"><i class="bi bi-dash-circle"></i></button>`;
+                    aksiTombol = `<button class="btn btn-sm btn-outline-secondary py-0 border-0" onclick="detailAksiSiswa('${s.nama}', 'Belum Mulai', 'Siswa belum membuka soal.')" title="Belum Ada Data"><i class="bi bi-dash-circle"></i></button>`;
                 }
 
-                let pBar = `<div class="progress-bar-custom"><div class="progress-fill" style="width:${progress}%"></div></div><small>${progress}%</small>`;
+                let pBar = `<div class="progress-bar-custom"><div class="progress-fill" style="width:${progress}%"></div></div><small>${progress}% (${isLive ? isLive.dijawab : 0}/${isLive ? isLive.totalSoal : 0})</small>`;
 
                 html += `<tr>
                     <td class="fw-bold">${s.nama}</td>
@@ -4601,8 +4647,8 @@ async function renderMonitoringTableReal() {
                     <td><span class="badge border text-theme-primary">${s.kelas}</span></td>
                     <td>${statusBadge}</td>
                     <td>${pBar}</td>
-                    <td class="text-center fw-bold text-success">${skor}</td>
-                    <td class="text-center">-</td>
+                    <td class="text-center fw-bold text-primary">${noSoalInfo}</td>
+                    <td class="text-center font-monospace fw-bold text-danger">${sisaWaktuInfo}</td>
                     <td class="text-center">${aksiTombol}</td>
                 </tr>`;
             });
@@ -4612,6 +4658,7 @@ async function renderMonitoringTableReal() {
 
             if(document.getElementById('mon-tot')) document.getElementById('mon-tot').textContent = targetSiswa.length;
             if(document.getElementById('mon-hdr')) document.getElementById('mon-hdr').textContent = statHadir;
+            if(document.getElementById('mon-sdg')) document.getElementById('mon-sdg').textContent = statSedang;
             if(document.getElementById('mon-sls')) document.getElementById('mon-sls').textContent = statSelesai;
             if(document.getElementById('mon-blm')) document.getElementById('mon-blm').textContent = statBelum;
         }
