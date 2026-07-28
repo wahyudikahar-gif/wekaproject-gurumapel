@@ -4355,11 +4355,11 @@ function bukaModalSoal() {
                         </div>`;
                     }
                 });
-            } else if (soal.tipe === 'BS') {
-                let savedObj = typeof savedAns === 'object' ? savedAns : {};
+          } else if (soal.tipe === 'BS') {
+                let savedObjBS = typeof savedAns === 'object' ? savedAns : {};
                 jHtml += `<div class="small text-muted mb-3 fw-bold">Tentukan Benar atau Salah untuk tiap pernyataan berikut:</div>`;
                 (soal.opsi || []).forEach((item, i) => {
-                    let val = savedObj[i] || 'Benar';
+                    let val = savedObjBS[i] || 'Benar';
                     jHtml += `
                     <div class="p-3 mb-2 rounded border" style="background: var(--bg-surface);">
                         <div class="mb-2 fw-bold text-theme-primary">${i+1}. ${item.pernyataan}</div>
