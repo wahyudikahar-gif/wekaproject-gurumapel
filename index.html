@@ -4095,7 +4095,7 @@ function bukaModalSoal() {
         }
 
         // Fungsi sementara untuk merespons klik tombol "Kerjakan Sekarang"
-      function masukRuangUjian(id) {
+     function masukRuangUjian(id) {
             const ujian = ujianDB.find(u => u.id === id);
             if(!ujian) return;
             
@@ -4112,17 +4112,25 @@ function bukaModalSoal() {
                     currentSoalIndex = 0;
                     isTakingExam = true;
                     
-                    // Ambil butir soal berdasarkan ID yang ditarik saat penjadwalan
                     currentExam.soalList = [];
-                    if (ujian.soalIds && Array.isArray(ujian.soalIds)) {
+                    
+                    // 1. Coba ambil berdasarkan soalIds yang dicentang
+                    if (ujian.soalIds && Array.isArray(ujian.soalIds) && ujian.soalIds.length > 0) {
                         ujian.soalIds.forEach(sId => {
                             let s = bankSoalDB.find(bs => bs.id === sId);
                             if(s) currentExam.soalList.push(s);
                         });
                     }
                     
+                    // 2. CADANGAN OTOMATIS (FAIL-SAFE):
+                    // Jika karena suatu hal ID tidak cocok atau kosong, otomatis ambil SEMUA soal dari Bank Soal
+                    if (currentExam.soalList.length === 0 && bankSoalDB && bankSoalDB.length > 0) {
+                        currentExam.soalList = [...bankSoalDB];
+                    }
+                    
+                    // Jika bank soal benar-benar kosong melompong
                     if (currentExam.soalList.length === 0) {
-                        return Swal.fire('Error', 'Tidak ada butir soal di dalam ujian ini atau soal telah dihapus oleh guru!', 'error');
+                        return Swal.fire('Error', 'Bank soal masih kosong! Silakan buat minimal 1 soal terlebih dahulu.', 'error');
                     }
                     
                     // Acak soal jika pengaturannya 'Ya'
