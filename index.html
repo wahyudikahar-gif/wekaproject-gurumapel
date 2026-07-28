@@ -699,33 +699,6 @@
                 <h4 class="mb-0 fw-bold"><i class="bi bi-journal-code text-theme-primary"></i> Manajemen Tugas Siswa</h4>
                 <button class="btn btn-theme-primary guru-only" onclick="bukaModalTambahTugas()"><i class="bi bi-plus-lg"></i> Buat Tugas Baru</button>
             </div>
-            <div class="modal fade" id="modalTambahTugas" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content glass-card" style="background: var(--bg-surface);">
-                <div class="modal-header border-bottom" style="border-color: var(--border-color)!important;">
-                    <h5 class="modal-title fw-bold text-theme-primary" id="modalTugasTitle">Buat Tugas Baru</h5>
-                    <button type="button" class="btn-close" style="filter: invert(1);" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="form-tugas" onsubmit="simpanTugas(event)">
-                        <input type="hidden" id="tugas-id">
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-8"><label class="small text-muted">Judul Tugas</label><input type="text" class="form-control form-control-custom form-control-sm" id="tugas-judul" required></div>
-                            <div class="col-md-4"><label class="small text-muted">Kelas Tujuan</label><select class="form-select form-select-custom form-control-sm" id="tugas-kelas" required></select></div>
-                        </div>
-                        <div class="mb-3"><label class="small text-muted">Deskripsi / Instruksi</label><textarea class="form-control form-control-custom form-control-sm" id="tugas-desc" rows="3" required></textarea></div>
-                        <div class="mb-3"><label class="small text-muted">Link Referensi/Lampiran Tugas (URL)</label><input type="text" class="form-control form-control-custom form-control-sm" id="tugas-lampiran-guru" placeholder="https://..."></div>
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-4"><label class="small text-muted">Tahun Ajaran</label><input type="text" class="form-control form-control-custom form-control-sm" id="tugas-ta" value="2025/2026" required></div>
-                            <div class="col-md-4"><label class="small text-muted">Semester</label><select class="form-select form-select-custom form-control-sm" id="tugas-smt" required><option>Ganjil</option><option>Genap</option></select></div>
-                            <div class="col-md-4"><label class="small text-muted">Deadline</label><input type="datetime-local" class="form-control form-control-custom form-control-sm" id="tugas-deadline" required></div>
-                        </div>
-                        <button type="submit" class="btn w-100 btn-theme-primary">Posting Tugas</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
 
             <div class="row g-3 mb-4 guru-only">
                 <div class="col-6 col-md-3"><div class="stat-card p-3"><div><span class="small text-muted">Total Tugas</span><h4 class="mb-0 fw-bold" id="tugas-stat-total">0</h4></div></div></div>
@@ -4985,84 +4958,6 @@ async function renderMonitoringTableReal() {
                 confirmButtonText: 'Tutup'
             });
         }
-        // --- MODUL MANAJEMEN TUGAS SISWA ---
-
-function bukaModalTambahTugas() {
-    const formTugas = document.getElementById('form-tugas');
-    if (formTugas) formTugas.reset();
-    
-    const tugasId = document.getElementById('tugas-id');
-    if (tugasId) tugasId.value = '';
-    
-    const modalTitle = document.getElementById('modalTugasTitle');
-    if (modalTitle) modalTitle.innerText = 'Buat Tugas Baru';
-    
-    const modalElement = document.getElementById('modalTambahTugas');
-    if (modalElement) {
-        var myModal = new bootstrap.Modal(modalElement);
-        myModal.show();
-    } else {
-        console.error("Elemen modalTambahTugas tidak ditemukan di HTML!");
-    }
-}
-
-function simpanTugas(event) {
-    event.preventDefault();
-    
-    const id = document.getElementById('tugas-id').value;
-    const judul = document.getElementById('tugas-judul').value;
-    const kelas = document.getElementById('tugas-kelas').value;
-    const desc = document.getElementById('tugas-desc').value;
-    const lampiran = document.getElementById('tugas-lampiran-guru').value;
-    const ta = document.getElementById('tugas-ta').value;
-    const smt = document.getElementById('tugas-smt').value;
-    const deadline = document.getElementById('tugas-deadline').value;
-
-    // Ambil data tugas lama dari localStorage atau buat array baru
-    let daftarTugas = JSON.parse(localStorage.getItem('daftar_tugas')) || [];
-
-    if (id) {
-        // Edit tugas yang sudah ada
-        daftarTugas = daftarTugas.map(t => {
-            if (t.id == id) {
-                return { ...t, judul, kelas, desc, lampiran, ta, smt, deadline };
-            }
-            return t;
-        });
-    } else {
-        // Tambah tugas baru
-        const tugasBaru = {
-            id: Date.now(),
-            judul,
-            kelas,
-            desc,
-            lampiran,
-            ta,
-            smt,
-            deadline,
-            tanggalDibuat: new Date().toISOString()
-        };
-        daftarTugas.push(tugasBaru);
-    }
-
-    // Simpan kembali ke localStorage
-    localStorage.setItem('daftar_tugas', JSON.stringify(daftarTugas));
-
-    // Tutup modal
-    const modalElement = document.getElementById('modalTambahTugas');
-    const modalInstance = bootstrap.Modal.getInstance(modalElement);
-    if (modalInstance) {
-        modalInstance.hide();
-    }
-
-    // Refresh tampilan daftar tugas jika fungsi render tersedia
-    if (typeof renderDaftarTugas === 'function') {
-        renderDaftarTugas();
-    }
-
-    alert('Tugas berhasil disimpan!');
-}
- <script>
-</script>       
+    </script>
 </body>
 </html>
