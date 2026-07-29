@@ -4564,7 +4564,7 @@ function selesaikanUjian(isAutoTimeOut = false) {
         jawabanSiswa: (typeof currentExamAnswers !== 'undefined') ? currentExamAnswers : {}
     };
     
-    // 3. Simpan ke array hasilujianDB (menggunakan huruf kecil sesuai database asli Anda)
+    // 3. Simpan ke array hasilujianDB (huruf kecil sesuai fungsi riwayat Anda)
     if(typeof hasilujianDB === 'undefined' || !Array.isArray(hasilujianDB)) {
         window.hasilujianDB = [];
     }
@@ -4580,13 +4580,13 @@ function selesaikanUjian(isAutoTimeOut = false) {
         localStorage.setItem('guruPro_hasilujian', JSON.stringify(window.hasilujianDB));
     }
     
+    // 5. Notifikasi & Pengalihan Halaman yang Aman
     if(typeof Swal !== 'undefined') {
         Swal.fire({
             title: isAutoTimeOut ? 'Waktu Ujian Telah Habis!' : 'Ujian Berhasil Dikumpulkan!',
             text: `Skor Akhir Anda: ${skorAkhir}`,
             icon: 'success'
         }).then(() => {
-            // 5. Kembalikan ke menu siswa dan refresh daftar ujian agar terkunci
             if(typeof switchTab === 'function') {
                 switchTab('view-cbt-siswa', document.getElementById('nav-siswa-cbt'));
             }
@@ -4595,12 +4595,12 @@ function selesaikanUjian(isAutoTimeOut = false) {
         });
     } else {
         alert('Ujian Selesai! Skor: ' + skorAkhir);
-        location.reload();
+        if(typeof switchTab === 'function') {
+            switchTab('view-cbt-siswa', document.getElementById('nav-siswa-cbt'));
+        }
+        if(typeof renderUjianSiswa === 'function') renderUjianSiswa();
+        if(typeof renderRiwayatUjianSiswa === 'function') renderRiwayatUjianSiswa();
     }
-    // 5. Arahkan ke tab riwayat agar tombol ujian berubah menjadi "Ujian Sudah Selesai" (terkunci)
-    switchTab('view-cbt-siswa', document.getElementById('nav-siswa-cbt'));
-    renderUjianSiswa();
-    renderRiwayatUjianSiswa();
 }
     function renderRiwayatUjianSiswa() {
             const tbody = document.getElementById('tbody-riwayat-siswa');
