@@ -4513,25 +4513,24 @@ function bukaModalSoal() {
                 }
             });
         }
-
-       function selesaikanUjian(isAutoTimeOut = false) {
-    if(examTimerInterval) clearInterval(examTimerInterval);
+function selesaikanUjian(isAutoTimeOut = false) {
+    if(typeof examTimerInterval !== 'undefined' && examTimerInterval) clearInterval(examTimerInterval);
     if(typeof hentikanSinyalUjian === 'function') hentikanSinyalUjian();
     
     // Tutup tampilan ruang ujian
     const overlay = document.getElementById('ruang-ujian-overlay');
     if(overlay) overlay.style.display = 'none';
-    isTakingExam = false;
+    if(typeof isTakingExam !== 'undefined') isTakingExam = false;
     
     // 1. Hitung nilai otomatis
     let totalPoinDiperoleh = 0;
     let totalBobotMaks = 0;
     
-    if(currentExam && currentExam.soalList) {
+    if(typeof currentExam !== 'undefined' && currentExam && currentExam.soalList) {
         currentExam.soalList.forEach((soal, idx) => {
             let bobot = parseInt(soal.bobot) || 10;
             totalBobotMaks += bobot;
-            let ans = currentExamAnswers[idx];
+            let ans = typeof currentExamAnswers !== 'undefined' ? currentExamAnswers[idx] : null;
             
             if (soal.tipe === 'PG' || soal.tipe === 'IS') {
                 if (ans && String(ans).trim().toLowerCase() === String(soal.kunci).trim().toLowerCase()) {
@@ -4546,53 +4545,59 @@ function bukaModalSoal() {
     }
     
     let skorAkhir = totalBobotMaks > 0 ? Math.round((totalPoinDiperoleh / totalBobotMaks) * 100) : 0;
-    let kkm = currentExam ? (parseInt(currentExam.kkm) || 75) : 75;
-    let predikat = typeof getPredikat === 'function' ? getPredikat(skorAkhir) : 'C';
+    let kkm = (typeof currentExam !== 'undefined' && currentExam && currentExam.kkm) ? (parseInt(currentExam.kkm) || 75) : 75;
+    let predikat = (typeof getPredikat === 'function') ? getPredikat(skorAkhir) : 'C';
     let ket = skorAkhir >= kkm ? 'Lulus / Tuntas' : 'Remedial / Belum Tuntas';
     
     // 2. Buat objek data hasil ujian
     const hasilObj = {
         id: 'HSU-' + Date.now(),
-        ujianId: currentExam ? currentExam.id : 'UNKNOWN',
-        judulUjian: currentExam ? currentExam.judul : 'Ujian CBT',
-        nisn: currentSiswaData ? currentSiswaData.nisn : '',
-        namaSiswa: currentSiswaData ? currentSiswaData.nama : '',
-        kelas: currentSiswaData ? currentSiswaData.kelas : '',
+        ujianId: (typeof currentExam !== 'undefined' && currentExam) ? currentExam.id : 'UNKNOWN',
+        judulUjian: (typeof currentExam !== 'undefined' && currentExam) ? currentExam.judul : 'Ujian CBT',
+        nisn: (typeof currentSiswaData !== 'undefined' && currentSiswaData) ? currentSiswaData.nisn : '',
+        namaSiswa: (typeof currentSiswaData !== 'undefined' && currentSiswaData) ? currentSiswaData.nama : '',
+        kelas: (typeof currentSiswaData !== 'undefined' && currentSiswaData) ? currentSiswaData.kelas : '',
         waktuSelesai: new Date().toLocaleString('id-ID'),
         skor: skorAkhir,
         predikat: predikat,
         keterangan: ket,
-        jawabanSiswa: currentExamAnswers
+        jawabanSiswa: (typeof currentExamAnswers !== 'undefined') ? currentExamAnswers : {}
     };
     
-    // 3. Simpan ke array hasilUjianDB dan pastikan tidak menimpa data kosong
-    if(!Array.isArray(hasilUjianDB)) hasilUjianDB = [];
+    // 3. Simpan ke array hasilujianDB (menggunakan huruf kecil sesuai database asli Anda)
+    if(typeof hasilujianDB === 'undefined' || !Array.isArray(hasilujianDB)) {
+        window.hasilujianDB = [];
+    }
     
-    // Hapus data lama jika siswa mengulang (sebagai antisipasi), lalu masukkan yang baru
-    hasilUjianDB = hasilUjianDB.filter(h => !(h.nisn === hasilObj.nisn && h.ujianId === hasilObj.ujianId));
-    hasilUjianDB.push(hasilObj);
+    // Hapus data lama jika siswa mengulang, lalu masukkan yang baru
+    window.hasilujianDB = window.hasilujianDB.filter(h => !(h.nisn === hasilObj.nisn && h.ujianId === hasilObj.ujianId));
+    window.hasilujianDB.push(hasilObj);
     
-    // 4. SIMPAN KE LOCALSTORAGE & FIRECLOUD SEKALIGUS
+    // 4. SIMPAN KE LOCALSTORAGE & FIRECLOUD
     if(typeof saveData === 'function') {
         saveData('hasilujian');
     } else {
-        localStorage.setItem('guruPro_hasilujian', JSON.stringify(hasilUjianDB));
+        localStorage.setItem('guruPro_hasilujian', JSON.stringify(window.hasilujianDB));
     }
     
-    Swal.fire({
-        title: isAutoTimeOut ? 'Waktu Ujian Telah Habis!' : 'Ujian Berhasil Dikumpulkan!',
-        text: `Skor Akhir Anda: ${skorAkhir}`,
-        icon: 'success'
-    }).then(() => {
-        // 5. Kembalikan ke menu siswa dan refresh daftar ujian agar statusnya berubah jadi terkunci
-        if(typeof switchTab === 'function') {
-            switchTab('view-cbt-siswa', document.getElementById('nav-siswa-cbt'));
-        }
-        if(typeof renderUjianSiswa === 'function') renderUjianSiswa();
-        if(typeof renderRiwayatUjianSiswa === 'function') renderRiwayatUjianSiswa();
-    });
+    if(typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: isAutoTimeOut ? 'Waktu Ujian Telah Habis!' : 'Ujian Berhasil Dikumpulkan!',
+            text: `Skor Akhir Anda: ${skorAkhir}`,
+            icon: 'success'
+        }).then(() => {
+            // 5. Kembalikan ke menu siswa dan refresh daftar ujian agar terkunci
+            if(typeof switchTab === 'function') {
+                switchTab('view-cbt-siswa', document.getElementById('nav-siswa-cbt'));
+            }
+            if(typeof renderUjianSiswa === 'function') renderUjianSiswa();
+            if(typeof renderRiwayatUjianSiswa === 'function') renderRiwayatUjianSiswa();
+        });
+    } else {
+        alert('Ujian Selesai! Skor: ' + skorAkhir);
+        location.reload();
+    }
 }
-    
     // 5. Arahkan ke tab riwayat agar tombol ujian berubah menjadi "Ujian Sudah Selesai" (terkunci)
     switchTab('view-cbt-siswa', document.getElementById('nav-siswa-cbt'));
     renderUjianSiswa();
