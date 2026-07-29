@@ -3729,7 +3729,6 @@ async function saveData(type) {
                     B: document.getElementById('pg-b').value,
                     C: document.getElementById('pg-c').value,
                     D: document.getElementById('pg-d').value,
-                    E: document.getElementById('pg-e').value,
                 };
                 kunciJawaban = document.getElementById('pg-kunci').value;
             } else if (tipe === 'BS') {
@@ -3890,7 +3889,6 @@ function renderBankSoal() {
                     document.getElementById('pg-b').value = soal.opsi.B || '';
                     document.getElementById('pg-c').value = soal.opsi.C || '';
                     document.getElementById('pg-d').value = soal.opsi.D || '';
-                    document.getElementById('pg-e').value = soal.opsi.E || '';
                     document.getElementById('pg-kunci').value = soal.kunci;
                     updateWarnaKunciPG(soal.kunci);
                 } else if (soal.tipe === 'BS') {
