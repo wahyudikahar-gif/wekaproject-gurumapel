@@ -2389,30 +2389,59 @@ async function saveData(type) {
             return { jumlah: arr.length, totalPoin: poin };
         }
 
-        function generateLegerDataForClass(kelas) {
-            let siswas = databaseSiswa.filter(s => s.kelas === kelas).sort((a,b) => a.nama.localeCompare(b.nama));
-            let result = [];
-            siswas.forEach(s => {
-                let tPelanggaran = s.pelanggaran ? s.pelanggaran.length : 0;
-                let poinPelanggaran = calculateTotalPoin(s);
-                let apr = calculateTotalApresiasi(s.nisn);
-                
-                result.push({
-                    nisn: s.nisn,
-                    nama: s.nama,
-                    rataTugas: getNilaiRataSiswa(s.nisn, ['tugas']),
-                    rataUH: getNilaiRataSiswa(s.nisn, ['ulangan', 'harian', 'cbt']),
-                    rataFormatif: getNilaiRataSiswa(s.nisn, ['formatif']),
-                    rataSumatif: getNilaiRataSiswa(s.nisn, ['sumatif', 'pts']),
-                    rataPAS: getNilaiRataSiswa(s.nisn, ['pas']),
-                    jmlPelanggaran: tPelanggaran,
-                    poinPelanggaran: poinPelanggaran,
-                    jmlApresiasi: apr.jumlah,
-                    poinApresiasi: apr.totalPoin
-                });
-            });
-            return result;
+       function generateLegerDataForClass(kelas) {
+    let siswas = databaseSiswa.filter(s => s.kelas === kelas).sort((a,b) => a.nama.localeCompare(b.nama));
+    let result = [];
+    
+    siswas.forEach(s => {
+        let tPelanggaran = s.pelanggaran ? s.pelanggaran.length : 0;
+        let poinPelanggaran = calculateTotalPoin(s);
+        let apr = calculateTotalApresiasi(s.nisn);
+        
+        // --- PENGGABUNGAN NILAI MANUAL & NILAI CBT OTOMATIS ---
+        
+        // 1. Ambil nilai manual dari nilaiDB
+        let nilaiManualSiswa = nilaiDB.filter(x => String(x.nisn) === String(s.nisn));
+        
+        // 2. Ambil nilai CBT dari hasilujianDB, lalu ubah strukturnya agar setara dengan nilai manual
+        let nilaiCBTSiswa = [];
+        if (Array.isArray(hasilUjianDB)) {
+            nilaiCBTSiswa = hasilUjianDB
+                .filter(h => String(h.nisn) === String(s.nisn))
+                .map(h => ({
+                    nisn: h.nisn,
+                    jenis: 'Ujian CBT',
+                    nilai: parseInt(h.skor) || 0
+                }));
         }
+        
+        // 3. Gabungkan keduanya menjadi satu daftar nilai siswa
+        let semuaNilaiSiswa = [...nilaiManualSiswa, ...nilaiCBTSiswa];
+        
+        // Fungsi helper lokal untuk merata-ratakan berdasarkan kategori/jenis
+        let getRataGabungan = (arrayJenis) => {
+            let filtered = semuaNilaiSiswa.filter(x => arrayJenis.some(j => String(x.jenis).toLowerCase().includes(j.toLowerCase())));
+            if(filtered.length === 0) return 0;
+            let sum = filtered.reduce((acc, curr) => acc + (parseInt(curr.nilai) || 0), 0);
+            return Math.round(sum / filtered.length);
+        };
+
+        result.push({
+            nisn: s.nisn,
+            nama: s.nama,
+            rataTugas: getRataGabungan(['tugas']),
+            rataUH: getRataGabungan(['ulangan', 'harian', 'cbt']), // <-- Di sini nilai CBT otomatis ikut terhitung!
+            rataFormatif: getRataGabungan(['formatif']),
+            rataSumatif: getRataGabungan(['sumatif', 'pts']),
+            rataPAS: getRataGabungan(['pas']),
+            jmlPelanggaran: tPelanggaran,
+            poinPelanggaran: poinPelanggaran,
+            jmlApresiasi: apr.jumlah,
+            poinApresiasi: apr.totalPoin
+        });
+    });
+    return result;
+}
 
         function renderLegerAdmin() {
             const tbody = document.getElementById('tbody-leger-admin'); if(!tbody) return; tbody.innerHTML = '';
