@@ -4514,47 +4514,50 @@ function bukaModalSoal() {
             });
         }
 
-        function selesaikanUjian(isAutoTimeOut = false) {
+       function selesaikanUjian(isAutoTimeOut = false) {
     if(examTimerInterval) clearInterval(examTimerInterval);
-    hentikanSinyalUjian();
+    if(typeof hentikanSinyalUjian === 'function') hentikanSinyalUjian();
     
+    // Tutup tampilan ruang ujian
     const overlay = document.getElementById('ruang-ujian-overlay');
     if(overlay) overlay.style.display = 'none';
     isTakingExam = false;
     
-    // 1. Koreksi otomatis untuk soal PG & Isian Singkat
+    // 1. Hitung nilai otomatis
     let totalPoinDiperoleh = 0;
     let totalBobotMaks = 0;
     
-    currentExam.soalList.forEach((soal, idx) => {
-        let bobot = parseInt(soal.bobot) || 10;
-        totalBobotMaks += bobot;
-        let ans = currentExamAnswers[idx];
-        
-        if (soal.tipe === 'PG' || soal.tipe === 'IS') {
-            if (ans && String(ans).trim().toLowerCase() === String(soal.kunci).trim().toLowerCase()) {
-                totalPoinDiperoleh += bobot;
+    if(currentExam && currentExam.soalList) {
+        currentExam.soalList.forEach((soal, idx) => {
+            let bobot = parseInt(soal.bobot) || 10;
+            totalBobotMaks += bobot;
+            let ans = currentExamAnswers[idx];
+            
+            if (soal.tipe === 'PG' || soal.tipe === 'IS') {
+                if (ans && String(ans).trim().toLowerCase() === String(soal.kunci).trim().toLowerCase()) {
+                    totalPoinDiperoleh += bobot;
+                }
+            } else {
+                if (ans !== undefined && ans !== '' && JSON.stringify(ans) !== '{}') {
+                    totalPoinDiperoleh += Math.round(bobot * 0.7); 
+                }
             }
-        } else {
-            if (ans !== undefined && ans !== '' && JSON.stringify(ans) !== '{}') {
-                totalPoinDiperoleh += Math.round(bobot * 0.7); 
-            }
-        }
-    });
+        });
+    }
     
     let skorAkhir = totalBobotMaks > 0 ? Math.round((totalPoinDiperoleh / totalBobotMaks) * 100) : 0;
-    let kkm = parseInt(currentExam.kkm) || 75;
-    let predikat = getPredikat(skorAkhir);
+    let kkm = currentExam ? (parseInt(currentExam.kkm) || 75) : 75;
+    let predikat = typeof getPredikat === 'function' ? getPredikat(skorAkhir) : 'C';
     let ket = skorAkhir >= kkm ? 'Lulus / Tuntas' : 'Remedial / Belum Tuntas';
     
-    // 2. Buat objek hasil ujian
+    // 2. Buat objek data hasil ujian
     const hasilObj = {
         id: 'HSU-' + Date.now(),
-        ujianId: currentExam.id,
-        judulUjian: currentExam.judul,
-        nisn: currentSiswaData.nisn,
-        namaSiswa: currentSiswaData.nama,
-        kelas: currentSiswaData.kelas,
+        ujianId: currentExam ? currentExam.id : 'UNKNOWN',
+        judulUjian: currentExam ? currentExam.judul : 'Ujian CBT',
+        nisn: currentSiswaData ? currentSiswaData.nisn : '',
+        namaSiswa: currentSiswaData ? currentSiswaData.nama : '',
+        kelas: currentSiswaData ? currentSiswaData.kelas : '',
         waktuSelesai: new Date().toLocaleString('id-ID'),
         skor: skorAkhir,
         predikat: predikat,
@@ -4562,29 +4565,33 @@ function bukaModalSoal() {
         jawabanSiswa: currentExamAnswers
     };
     
-    // 3. AMBIL DATA TERBARU DARI STORAGE TERLEBIH DAHULU (Pencegahan data tertimpa)
-    let savedHasil = localStorage.getItem('guruPro_hasilujian');
-    if(savedHasil) {
-        try { hasilUjianDB = JSON.parse(savedHasil); } catch(e) { hasilUjianDB = []; }
-    }
+    // 3. Simpan ke array hasilUjianDB dan pastikan tidak menimpa data kosong
     if(!Array.isArray(hasilUjianDB)) hasilUjianDB = [];
-
-    // Cek apakah siswa ini sudah pernah menyimpan sebelumnya untuk ujian ini
-    let existingIndex = hasilUjianDB.findIndex(h => h.nisn === currentSiswaData.nisn && h.ujianId === currentExam.id);
-    if(existingIndex > -1) {
-        hasilUjianDB[existingIndex] = hasilObj; // Update jika sudah ada
-    } else {
-        hasilUjianDB.push(hasilObj); // Tambah baru
-    }
     
-    // 4. SIMPAN PERMANEN KE LOCALSTORAGE & FIREBASE CLOUD
-    saveData('hasilujian'); 
+    // Hapus data lama jika siswa mengulang (sebagai antisipasi), lalu masukkan yang baru
+    hasilUjianDB = hasilUjianDB.filter(h => !(h.nisn === hasilObj.nisn && h.ujianId === hasilObj.ujianId));
+    hasilUjianDB.push(hasilObj);
+    
+    // 4. SIMPAN KE LOCALSTORAGE & FIRECLOUD SEKALIGUS
+    if(typeof saveData === 'function') {
+        saveData('hasilujian');
+    } else {
+        localStorage.setItem('guruPro_hasilujian', JSON.stringify(hasilUjianDB));
+    }
     
     Swal.fire({
-        title: isAutoTimeOut ? 'Waktu Ujian Telah Habis!' : 'Ujian Selesai!',
-        text: `Skor Akhir Anda: ${skorAkhir} (${ket})`,
+        title: isAutoTimeOut ? 'Waktu Ujian Telah Habis!' : 'Ujian Berhasil Dikumpulkan!',
+        text: `Skor Akhir Anda: ${skorAkhir}`,
         icon: 'success'
+    }).then(() => {
+        // 5. Kembalikan ke menu siswa dan refresh daftar ujian agar statusnya berubah jadi terkunci
+        if(typeof switchTab === 'function') {
+            switchTab('view-cbt-siswa', document.getElementById('nav-siswa-cbt'));
+        }
+        if(typeof renderUjianSiswa === 'function') renderUjianSiswa();
+        if(typeof renderRiwayatUjianSiswa === 'function') renderRiwayatUjianSiswa();
     });
+}
     
     // 5. Arahkan ke tab riwayat agar tombol ujian berubah menjadi "Ujian Sudah Selesai" (terkunci)
     switchTab('view-cbt-siswa', document.getElementById('nav-siswa-cbt'));
