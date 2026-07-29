@@ -4489,71 +4489,82 @@ function bukaModalSoal() {
         }
 
         function selesaikanUjian(isAutoTimeOut = false) {
-            if(examTimerInterval) clearInterval(examTimerInterval);
-            // KODE BARU: Menghentikan pengiriman sinyal karena ujian sudah selesai
-            hentikanSinyalUjian();
-            const overlay = document.getElementById('ruang-ujian-overlay');
-            if(overlay) overlay.style.display = 'none';
-            isTakingExam = false;
-            
-            // Koreksi otomatis untuk soal PG & Isian Singkat
-            let totalPoinDiperoleh = 0;
-            let totalBobotMaks = 0;
-            
-            currentExam.soalList.forEach((soal, idx) => {
-                let bobot = parseInt(soal.bobot) || 10;
-                totalBobotMaks += bobot;
-                let ans = currentExamAnswers[idx];
-                
-                if (soal.tipe === 'PG') {
-                    if (ans && String(ans).trim().toUpperCase() === String(soal.kunci).trim().toUpperCase()) {
-                        totalPoinDiperoleh += bobot;
-                    }
-                } else if (soal.tipe === 'IS') {
-                    if (ans && String(ans).trim().toLowerCase() === String(soal.kunci).trim().toLowerCase()) {
-                        totalPoinDiperoleh += bobot;
-                    }
-                } else {
-                    // Untuk soal kompleks/essay diberikan apresiasi nilai jika terjawab
-                    if (ans !== undefined && ans !== '' && JSON.stringify(ans) !== '{}') {
-                        totalPoinDiperoleh += Math.round(bobot * 0.7); 
-                    }
-                }
-            });
-            
-            let skorAkhir = totalBobotMaks > 0 ? Math.round((totalPoinDiperoleh / totalBobotMaks) * 100) : 0;
-            let kkm = parseInt(currentExam.kkm) || 75;
-            let predikat = getPredikat(skorAkhir);
-            let ket = skorAkhir >= kkm ? 'Lulus / Tuntas' : 'Remedial / Belum Tuntas';
-            
-            const hasilObj = {
-                id: 'HSU-' + Date.now(),
-                ujianId: currentExam.id,
-                judulUjian: currentExam.judul,
-                nisn: currentSiswaData.nisn,
-                namaSiswa: currentSiswaData.nama,
-                kelas: currentSiswaData.kelas,
-                waktuSelesai: new Date().toLocaleString('id-ID'),
-                skor: skorAkhir,
-                predikat: predikat,
-                keterangan: ket,
-                jawabanSiswa: currentExamAnswers
-            };
-            
-            if(!Array.isArray(hasilUjianDB)) hasilUjianDB = [];
-            hasilUjianDB.push(hasilObj);
-            saveData('hasilujian');
-            
-            Swal.fire({
-                title: isAutoTimeOut ? 'Waktu Ujian Telah Habis!' : 'Ujian Selesai!',
-                text: `Skor Akhir Anda: ${skorAkhir} (${ket})`,
-                icon: 'success'
-            });
-            
-            // Arahkan otomatis ke tab riwayat ujian siswa
-            switchTab('view-cbt-siswa', document.getElementById('nav-siswa-cbt'));
-            renderRiwayatUjianSiswa();
+    if(examTimerInterval) clearInterval(examTimerInterval);
+    hentikanSinyalUjian();
+    
+    const overlay = document.getElementById('ruang-ujian-overlay');
+    if(overlay) overlay.style.display = 'none';
+    isTakingExam = false;
+    
+    // 1. Koreksi otomatis untuk soal PG & Isian Singkat
+    let totalPoinDiperoleh = 0;
+    let totalBobotMaks = 0;
+    
+    currentExam.soalList.forEach((soal, idx) => {
+        let bobot = parseInt(soal.bobot) || 10;
+        totalBobotMaks += bobot;
+        let ans = currentExamAnswers[idx];
+        
+        if (soal.tipe === 'PG' || soal.tipe === 'IS') {
+            if (ans && String(ans).trim().toLowerCase() === String(soal.kunci).trim().toLowerCase()) {
+                totalPoinDiperoleh += bobot;
+            }
+        } else {
+            if (ans !== undefined && ans !== '' && JSON.stringify(ans) !== '{}') {
+                totalPoinDiperoleh += Math.round(bobot * 0.7); 
+            }
         }
+    });
+    
+    let skorAkhir = totalBobotMaks > 0 ? Math.round((totalPoinDiperoleh / totalBobotMaks) * 100) : 0;
+    let kkm = parseInt(currentExam.kkm) || 75;
+    let predikat = getPredikat(skorAkhir);
+    let ket = skorAkhir >= kkm ? 'Lulus / Tuntas' : 'Remedial / Belum Tuntas';
+    
+    // 2. Buat objek hasil ujian
+    const hasilObj = {
+        id: 'HSU-' + Date.now(),
+        ujianId: currentExam.id,
+        judulUjian: currentExam.judul,
+        nisn: currentSiswaData.nisn,
+        namaSiswa: currentSiswaData.nama,
+        kelas: currentSiswaData.kelas,
+        waktuSelesai: new Date().toLocaleString('id-ID'),
+        skor: skorAkhir,
+        predikat: predikat,
+        keterangan: ket,
+        jawabanSiswa: currentExamAnswers
+    };
+    
+    // 3. AMBIL DATA TERBARU DARI STORAGE TERLEBIH DAHULU (Pencegahan data tertimpa)
+    let savedHasil = localStorage.getItem('guruPro_hasilujian');
+    if(savedHasil) {
+        try { hasilUjianDB = JSON.parse(savedHasil); } catch(e) { hasilUjianDB = []; }
+    }
+    if(!Array.isArray(hasilUjianDB)) hasilUjianDB = [];
+
+    // Cek apakah siswa ini sudah pernah menyimpan sebelumnya untuk ujian ini
+    let existingIndex = hasilUjianDB.findIndex(h => h.nisn === currentSiswaData.nisn && h.ujianId === currentExam.id);
+    if(existingIndex > -1) {
+        hasilUjianDB[existingIndex] = hasilObj; // Update jika sudah ada
+    } else {
+        hasilUjianDB.push(hasilObj); // Tambah baru
+    }
+    
+    // 4. SIMPAN PERMANEN KE LOCALSTORAGE & FIREBASE CLOUD
+    saveData('hasilujian'); 
+    
+    Swal.fire({
+        title: isAutoTimeOut ? 'Waktu Ujian Telah Habis!' : 'Ujian Selesai!',
+        text: `Skor Akhir Anda: ${skorAkhir} (${ket})`,
+        icon: 'success'
+    });
+    
+    // 5. Arahkan ke tab riwayat agar tombol ujian berubah menjadi "Ujian Sudah Selesai" (terkunci)
+    switchTab('view-cbt-siswa', document.getElementById('nav-siswa-cbt'));
+    renderUjianSiswa();
+    renderRiwayatUjianSiswa();
+}
     function renderRiwayatUjianSiswa() {
             const tbody = document.getElementById('tbody-riwayat-siswa');
             if(!tbody || !currentSiswaData) return;
