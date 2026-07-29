@@ -331,7 +331,16 @@
                                 <span class="fw-bold text-theme-primary" id="siswa-guru-nama">Nama Guru</span>
                             </div>
                         </div>
-
+<div class="col-12 col-lg-8">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-theme text-white">
+                    <h5 class="mb-0"><i class="bi bi-megaphone-fill me-2"></i> Pengumuman Sekolah</h5>
+                </div>
+                <div class="card-body">
+                    <div id="container-pengumuman-siswa"></div>
+                </div>
+            </div>
+        </div>
                         <div class="text-start p-3 rounded border mb-4" style="background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3)!important; cursor:pointer;" onclick="switchTab('view-apresiasi-siswa', document.getElementById('nav-siswa-apresiasi')); renderApresiasiSiswa();">
                             <h6 class="fw-bold text-theme-secondary mb-2"><i class="bi bi-star-fill"></i> Poin Apresiasi Anda</h6>
                             <div class="d-flex justify-content-between align-items-center">
@@ -723,42 +732,79 @@
             </div>
         </section>
 
-        <!-- PENGUMUMAN MODUL -->
-        <section id="view-pengumuman" style="display: none;">
-            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
-                <h4 class="mb-0 fw-bold"><i class="bi bi-megaphone-fill text-theme-primary"></i> Modul Pengumuman</h4>
-                <button class="btn btn-theme-primary guru-only" onclick="bukaModalPengumuman()"><i class="bi bi-plus-lg"></i> Buat Pengumuman</button>
-            </div>
-            
-            <div class="row g-3 mb-4 guru-only">
-                <div class="col-6 col-md-2"><div class="stat-card p-2 text-center flex-column"><span class="small text-muted d-block">Total</span><h4 class="mb-0 fw-bold" id="peng-stat-total">0</h4></div></div>
-                <div class="col-6 col-md-2"><div class="stat-card p-2 text-center flex-column"><span class="small text-muted d-block">Aktif</span><h4 class="mb-0 fw-bold text-success" id="peng-stat-aktif">0</h4></div></div>
-                <div class="col-6 col-md-2"><div class="stat-card p-2 text-center flex-column"><span class="small text-muted d-block">Terjadwal</span><h4 class="mb-0 fw-bold text-info" id="peng-stat-jadwal">0</h4></div></div>
-                <div class="col-6 col-md-2"><div class="stat-card p-2 text-center flex-column"><span class="small text-muted d-block">Kedaluwarsa</span><h4 class="mb-0 fw-bold text-warning" id="peng-stat-exp">0</h4></div></div>
-                <div class="col-6 col-md-2"><div class="stat-card p-2 text-center flex-column"><span class="small text-muted d-block">Kls Tujuan</span><h4 class="mb-0 fw-bold text-theme-primary" id="peng-stat-kls">0</h4></div></div>
-                <div class="col-6 col-md-2"><div class="stat-card p-2 text-center flex-column"><span class="small text-muted d-block">Bulan Ini</span><h4 class="mb-0 fw-bold text-secondary" id="peng-stat-bln">0</h4></div></div>
-            </div>
+    <!-- PENGUMUMAN MODUL -->
+<section id="view-pengumuman" style="display: none;">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <h4 class="mb-0 fw-bold"><i class="bi bi-megaphone-fill text-theme-primary"></i> Modul Pengumuman</h4>
+        <button class="btn btn-theme-primary guru-only" onclick="bukaModalPengumuman()"><i class="bi bi-plus-lg"></i> Buat Pengumuman</button>
+    </div>
 
-            <div class="glass-card p-0 guru-only">
-                <div class="p-3 border-bottom d-flex gap-3 flex-wrap align-items-center" style="border-color: var(--border-color)!important;">
-                    <select class="form-select form-select-sm form-select-custom w-auto" id="filter-pengumuman-kelas" onchange="renderTablePengumuman()">
-                        <option value="ALL">Semua Kelas Tujuan</option>
-                    </select>
-                </div>
-                <div class="table-responsive p-3">
-                    <table class="table table-custom w-100">
-                        <thead><tr><th>Judul & Kategori</th><th>Kelas Tujuan</th><th>Tgl Publikasi</th><th>Status</th><th>Jml Pembaca</th><th>Aksi</th></tr></thead>
-                        <tbody id="tbody-pengumuman-admin"></tbody>
-                    </table>
-                    <div id="empty-peng-admin-msg" class="text-center text-muted p-4 d-none">Belum ada pengumuman.</div>
-                </div>
+    <!-- Kotak / Tabel Daftar Pengumuman di Sisi Guru -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th width="50">No</th>
+                            <th>Tanggal</th>
+                            <th>Judul Pengumuman</th>
+                            <th>Target Kelas</th>
+                            <th>Isi Pengumuman</th>
+                            <th class="text-center" width="100">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-pengumuman">
+                        <!-- Data pengumuman akan diisi otomatis oleh JavaScript -->
+                    </tbody>
+                </table>
             </div>
-
-            <div class="siswa-only w-100" id="container-pengumuman-siswa">
-                <div class="row g-3" id="grid-pengumuman-siswa"></div>
-                <div id="empty-peng-siswa-msg" class="text-center text-muted p-4 d-none glass-card mt-3">Tidak ada pengumuman untuk kelas Anda saat ini.</div>
+        </div>
+    </div>
+</section>
+   <!-- Modal Buat/Edit Pengumuman -->
+<div class="modal fade" id="modalPengumuman" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Buat Pengumuman Baru</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-        </section>
+            <div class="modal-body">
+                <form id="form-pengumuman" onsubmit="event.preventDefault(); simpanPengumuman();">
+    <!-- Input Judul -->
+    <div class="mb-3">
+        <label class="form-label">Judul Pengumuman</label>
+        <input type="text" id="judul-pengumuman" class="form-control" required>
+    </div>
+    <!-- Input Target Kelas -->
+    <div class="mb-3">
+        <label class="form-label">Target Kelas</label>
+        <select id="target-kelas-pengumuman" class="form-select" required>
+            <option value="ALL">Semua Kelas</option>
+            <option value="X-A">Kelas X-A</option>
+            <option value="X-B">Kelas X-B</option>
+            <option value="X-B">Kelas X-C</option>
+            <option value="X-B">Kelas X-D</option>
+            <option value="X-B">Kelas X-E</option>
+            <option value="X-B">Kelas X-F</option>
+            <option value="X-B">Kelas X-G</option>
+        </select>
+    </div>
+    <!-- Input Isi -->
+    <div class="mb-3">
+        <label class="form-label">Isi Pengumuman</label>
+        <textarea id="isi-pengumuman" class="form-control" rows="4" required></textarea>
+    </div>
+    <!-- Tombol Simpan Wajib Tipe Submit -->
+    <div class="text-end">
+        <button type="submit" class="btn btn-primary">Simpan & Terbitkan</button>
+    </div>
+</form>
+            </div>
+        </div>
+    </div>
+</div> 
 
         <!-- BANK SOAL CBT (ADMIN) -->
         <section id="view-bank-soal" style="display: none;">
@@ -1463,8 +1509,20 @@
                         <input type="hidden" id="manual-nilai-id">
                         <div class="mb-3"><label class="small text-muted fw-bold">Pilih Siswa</label><select class="form-select form-select-custom" id="manual-nilai-nisn" required></select></div>
                         <div class="row g-3 mb-3">
-                            <div class="col-6"><label class="small text-muted fw-bold">Nilai (0-100)</label><input type="number" class="form-control form-control-custom" id="manual-nilai-angka" min="0" max="100" required></div>
-                            <div class="col-6"><label class="small text-muted fw-bold">Nama Penilaian / Materi</label><input type="text" class="form-control form-control-custom" id="manual-nilai-judul" placeholder="Contoh: UH 1 / Bab 2" required></div>
+                            <div class="col-md-4">
+                                <label class="small text-muted fw-bold">Jenis Penilaian</label>
+                                <select class="form-select form-select-custom" id="manual-nilai-jenis" required>
+                                    <option value="Tugas">Tugas Manual</option>
+                                    <option value="Ulangan Harian">Ulangan Harian</option>
+                                    <option value="Formatif">Formatif</option>
+                                    <option value="Sumatif">Sumatif</option>
+                                    <option value="PTS">PTS</option>
+                                    <option value="PAS">PAS</option>
+                                    <option value="Projek">Projek</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4"><label class="small text-muted fw-bold">Nilai (0-100)</label><input type="number" class="form-control form-control-custom" id="manual-nilai-angka" min="0" max="100" required></div>
+                            <div class="col-md-4"><label class="small text-muted fw-bold">Nama / Judul</label><input type="text" class="form-control form-control-custom" id="manual-nilai-judul" placeholder="Contoh: Bab 2" required></div>
                         </div>
                         <div class="mb-4"><label class="small text-muted fw-bold">Catatan Guru (Opsional)</label><textarea class="form-control form-control-custom" id="manual-nilai-catatan" rows="2"></textarea></div>
                         <button type="submit" class="btn w-100 btn-theme-primary">Simpan Nilai</button>
@@ -2642,19 +2700,19 @@ async function saveData(type) {
             }
         }
 
-        function cetakRaporPDF(nisn) {
+        async function cetakRaporExcel(nisn) {
             const siswa = databaseSiswa.find(s => s.nisn === nisn); if(!siswa) return;
             const myNilai = nilaiDB.filter(n => n.nisn === nisn);
-            const doc = new jspdf.jsPDF();
-            doc.setFontSize(16); doc.text("LAPORAN AKADEMIK & LEGER INDIVIDU", 105, 20, { align: "center" });
-            doc.setFontSize(10); 
-            doc.text(`Nama: ${siswa.nama}`, 14, 35); 
-            doc.text(`NISN: ${siswa.nisn}`, 14, 42); 
-            doc.text(`Kelas: ${siswa.kelas}`, 14, 49);
+            const wb = new ExcelJS.Workbook(); const ws = wb.addWorksheet('Rapor');
+            ws.addRow(['LAPORAN AKADEMIK INDIVIDU']); ws.mergeCells('A1:F1');
+            ws.addRow([`Nama: ${siswa.nama}`, '', `NISN: ${siswa.nisn}`, '', `Kelas: ${siswa.kelas}`, '']);
+            ws.addRow([]);
+            ws.addRow(['No', 'Mapel', 'Kategori', 'Judul', 'Nilai', 'Predikat']);
             
-            let bodyData = myNilai.length > 0 ? myNilai.map((n, i) => [i+1, n.mapel || sysMapel, n.jenis, n.judul, n.nilai, getPredikat(n.nilai)]) : [['-', 'Belum ada nilai', '-', '-', '-', '-']];
-            doc.autoTable({ startY: 60, head: [['No', 'Mapel', 'Kategori', 'Judul', 'Nilai', 'Predikat']], body: bodyData, theme: 'grid' });
-            doc.save(`Rapor_${siswa.nama}.pdf`); showToast("Rapor PDF Berhasil Diunduh!");
+            // Perubahan: Memaksa selalu menggunakan sysMapel
+            myNilai.forEach((n, i) => ws.addRow([i+1, sysMapel, n.jenis, n.judul, n.nilai, getPredikat(n.nilai)]));
+            
+            const buf = await wb.xlsx.writeBuffer(); saveAs(new Blob([buf]), `Rapor_${siswa.nama}.xlsx`); showToast("Rapor Excel Berhasil Diunduh!");
         }
 
         async function cetakRaporExcel(nisn) {
@@ -3417,6 +3475,22 @@ async function saveData(type) {
                 }
             });
         }
+        function bukaModalTambahTugas() {
+    // Mengosongkan form dari isian sebelumnya
+    document.getElementById('form-tugas').reset();
+    
+    // Mengosongkan ID (menandakan ini tugas baru, bukan edit)
+    document.getElementById('tugas-id').value = '';
+    
+    // Kembalikan pilihan dropdown kelas ke default (Semua Kelas)
+    document.getElementById('tugas-kelas').value = 'ALL';
+    
+    // Pastikan judul modal kembali menjadi "Buat Tugas Baru"
+    document.getElementById('modalTugasTitle').textContent = 'Buat Tugas Baru';
+    
+    // Tampilkan modal/jendela popup-nya
+    new bootstrap.Modal(document.getElementById('modalTambahTugas')).show();
+}
         function simpanTugas(e) { 
             e.preventDefault(); 
             
@@ -3889,6 +3963,7 @@ function renderBankSoal() {
                     document.getElementById('pg-b').value = soal.opsi.B || '';
                     document.getElementById('pg-c').value = soal.opsi.C || '';
                     document.getElementById('pg-d').value = soal.opsi.D || '';
+                    document.getElementById('pg-e').value = soal.opsi.E || '';
                     document.getElementById('pg-kunci').value = soal.kunci;
                     updateWarnaKunciPG(soal.kunci);
                 } else if (soal.tipe === 'BS') {
@@ -4458,7 +4533,7 @@ function bukaModalSoal() {
             switchTab('view-cbt-siswa', document.getElementById('nav-siswa-cbt'));
             renderRiwayatUjianSiswa();
         }
-        function renderRiwayatUjianSiswa() {
+    function renderRiwayatUjianSiswa() {
             const tbody = document.getElementById('tbody-riwayat-siswa');
             if(!tbody || !currentSiswaData) return;
             
@@ -4545,11 +4620,12 @@ function bukaModalSoal() {
                 let predikat = getPredikat(d.nilai);
                 let status = d.nilai >= 75 ? '<span class="badge bg-success">Tuntas</span>' : '<span class="badge bg-danger">Remedial</span>';
                 
-                let aksi = '';
+              let aksi = '';
                 if(d.sumber === 'manual') {
                     aksi = `<button class="btn btn-sm btn-outline-danger py-0 border-0" onclick="hapusNilaiManual('${d.id}')" title="Hapus Nilai"><i class="bi bi-trash"></i></button>`;
                 } else {
-                    aksi = `<span class="badge bg-secondary opacity-75">Auto CBT</span>`;
+                    // Diubah agar nilai CBT juga bisa dihapus secara manual
+                    aksi = `<button class="btn btn-sm btn-outline-danger py-0 border-0" onclick="hapusNilaiCBT('${d.id}')" title="Hapus Nilai CBT"><i class="bi bi-trash"></i> Hapus</button>`;
                 }
 
                 html += `<tr>
@@ -4590,7 +4666,7 @@ function bukaModalSoal() {
                 nilai: document.getElementById('manual-nilai-angka').value,
                 judul: document.getElementById('manual-nilai-judul').value,
                 catatan: document.getElementById('manual-nilai-catatan').value,
-                jenis: 'Ulangan Harian', // Default jenis nilai manual
+                jenis: document.getElementById('manual-nilai-jenis').value, // <-- Ini yang berubah, mengambil dari dropdown
                 mapel: sysMapel
             };
 
@@ -4956,6 +5032,343 @@ async function renderMonitoringTableReal() {
                 confirmButtonText: 'Tutup'
             });
         }
+        // ==========================================
+        // FUNGSI IMPORT SOAL EXCEL CBT
+        // ==========================================
+        function importSoalCBTExcel(e) {
+            const file = e.target.files[0]; 
+            if(!file) return; 
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const data = new Uint8Array(event.target.result); 
+                    // Baca file Excel menggunakan library xlsx yang sudah ada di HTML
+                    const workbook = XLSX.read(data, {type: 'array'}); 
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]]; 
+                    const json = XLSX.utils.sheet_to_json(sheet, {header: 1});
+                    
+                    let count = 0;
+                    
+                    // Looping data, mulai dari index 1 karena index 0 adalah Header
+                    for(let i = 1; i < json.length; i++) {
+                        const row = json[i];
+                        // Minimal baris memiliki teks pertanyaan
+                        if(row.length >= 4 && row[3]) {
+                            const bab = String(row[0] || 'Umum').trim();
+                            const tipe = String(row[1] || 'PG').trim().toUpperCase();
+                            const bobot = parseInt(row[2]) || 10;
+                            const pertanyaan = String(row[3] || '').trim();
+                            
+                            let opsiData = {};
+                            let kunciJawaban = '';
+                            
+                            // Mapping berdasarkan tipe soal dari Excel ke JSON sistem
+                            if (tipe === 'PG') {
+                                opsiData = {
+                                    A: String(row[4] || ''),
+                                    B: String(row[5] || ''),
+                                    C: String(row[6] || ''),
+                                    D: String(row[7] || '')
+                                };
+                                kunciJawaban = String(row[8] || 'A').trim().toUpperCase();
+                            } 
+                            else if (tipe === 'BS') {
+                                opsiData = [];
+                                for(let j=0; j<4; j++) {
+                                    let stmt = String(row[9 + (j*2)] || '');
+                                    let ans = String(row[10 + (j*2)] || 'Benar');
+                                    if(stmt) opsiData.push({pernyataan: stmt, jawaban: ans});
+                                }
+                                kunciJawaban = 'Kompleks (Lihat Edit)';
+                            } 
+                            else if (tipe === 'MJ') {
+                                opsiData = [];
+                                for(let j=0; j<4; j++) {
+                                    let premis = String(row[9 + (j*2)] || '');
+                                    let pasangan = String(row[10 + (j*2)] || '');
+                                    if(premis) opsiData.push({premis: premis, pasangan: pasangan});
+                                }
+                                kunciJawaban = 'Kompleks (Lihat Edit)';
+                            } 
+                            else if (tipe === 'IS' || tipe === 'ES') {
+                                kunciJawaban = String(row[8] || '').trim();
+                            }
+
+                            // Buat objek soal
+                            const newSoal = {
+                                id: 'SOAL-' + Date.now() + '-' + count,
+                                bab: bab,
+                                tipe: tipe,
+                                bobot: bobot,
+                                pertanyaan: pertanyaan, // Disimpan sebagai HTML text biasa
+                                opsi: opsiData,
+                                kunci: kunciJawaban
+                            };
+                            
+                            bankSoalDB.push(newSoal);
+                            count++;
+                        }
+                    }
+                    
+                    // Simpan dan render ulang UI
+                    saveData('banksoal'); 
+                    renderBankSoal();
+                    Swal.fire('Sukses', `${count} Soal berhasil diimpor dari Excel!`, 'success'); 
+                    
+                } catch(error) {
+                    console.error("Error import excel:", error);
+                    Swal.fire('Error', 'Gagal memproses file Excel. Pastikan format sesuai template.', 'error');
+                } finally {
+                    e.target.value = ""; // Reset input file agar bisa upload file yang sama lagi
+                }
+            }; 
+            reader.readAsArrayBuffer(file);
+        }
+        // ==========================================
+        // FUNGSI CETAK RAPOR / LEGER INDIVIDU (PDF & EXCEL)
+        // ==========================================
+        function cetakRaporPDF(nisn) {
+            try {
+                const siswa = databaseSiswa.find(s => String(s.nisn) === String(nisn)); 
+                if(!siswa) return Swal.fire('Error', 'Data siswa tidak ditemukan!', 'error');
+                
+                const myNilai = nilaiDB.filter(n => String(n.nisn) === String(nisn));
+                const doc = new jspdf.jsPDF();
+                
+                doc.setFontSize(16); 
+                doc.text("LAPORAN AKADEMIK & LEGER INDIVIDU", 105, 20, { align: "center" });
+                doc.setFontSize(10); 
+                doc.text(`Nama: ${siswa.nama}`, 14, 35); 
+                doc.text(`NISN: ${siswa.nisn}`, 14, 42); 
+                doc.text(`Kelas: ${siswa.kelas}`, 14, 49);
+                
+                let bodyData = myNilai.length > 0 ? myNilai.map((n, i) => [
+                    i + 1, 
+                    sysMapel || 'Seni Budaya', 
+                    n.jenis || '-', 
+                    n.judul || '-', 
+                    n.nilai || 0, 
+                    getPredikat(n.nilai || 0)
+                ]) : [['-', 'Belum ada nilai', '-', '-', '-', '-']];
+                
+                doc.autoTable({ 
+                    startY: 60, 
+                    head: [['No', 'Mapel', 'Kategori', 'Judul', 'Nilai', 'Predikat']], 
+                    body: bodyData, 
+                    theme: 'grid' 
+                });
+                
+                doc.save(`Rapor_${siswa.nama}.pdf`); 
+                showToast("Rapor PDF Berhasil Diunduh!");
+            } catch(error) {
+                console.error(error);
+                Swal.fire('Error PDF', 'Gagal mencetak rapor: ' + error.message, 'error');
+            }
+        }
+
+        async function cetakRaporExcel(nisn) {
+            try {
+                const siswa = databaseSiswa.find(s => String(s.nisn) === String(nisn)); 
+                if(!siswa) return Swal.fire('Error', 'Data siswa tidak ditemukan!', 'error');
+                
+                const myNilai = nilaiDB.filter(n => String(n.nisn) === String(nisn));
+                const wb = new ExcelJS.Workbook(); 
+                const ws = wb.addWorksheet('Rapor');
+                
+                ws.addRow(['LAPORAN AKADEMIK INDIVIDU']); 
+                ws.mergeCells('A1:F1');
+                ws.addRow([`Nama: ${siswa.nama}`, '', `NISN: ${siswa.nisn}`, '', `Kelas: ${siswa.kelas}`, '']);
+                ws.addRow([]);
+                ws.addRow(['No', 'Mapel', 'Kategori', 'Judul', 'Nilai', 'Predikat']);
+                
+                if(myNilai.length > 0) {
+                    myNilai.forEach((n, i) => {
+                        ws.addRow([i+1, sysMapel || 'Seni Budaya', n.jenis || '-', n.judul || '-', n.nilai || 0, getPredikat(n.nilai || 0)]);
+                    });
+                } else {
+                    ws.addRow(['-', 'Belum ada nilai', '-', '-', '-', '-']);
+                }
+                
+                const buf = await wb.xlsx.writeBuffer(); 
+                saveAs(new Blob([buf]), `Rapor_${siswa.nama}.xlsx`); 
+                showToast("Rapor Excel Berhasil Diunduh!");
+            } catch(error) {
+                console.error(error);
+                Swal.fire('Error Excel', 'Gagal mencetak rapor: ' + error.message, 'error');
+            }
+        }
+     // ==========================================
+        // FUNGSI HAPUS NILAI CBT SECARA MANUAL
+        // ==========================================
+        function hapusNilaiCBT(id) {
+            Swal.fire({
+                title: 'Hapus Nilai CBT?',
+                text: "Nilai ujian CBT siswa ini akan dihapus permanen dari sistem!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Ya, Hapus!'
+            }).then(r => {
+                if(r.isConfirmed) {
+                    // Hapus dari array hasilUjianDB
+                    hasilUjianDB = hasilUjianDB.filter(h => h.id !== id);
+                    
+                    // Simpan perubahan ke localStorage & Firebase Cloud
+                    saveData('hasilujian');
+                    
+                    // Render ulang tabel penilaian
+                    renderTabelPenilaian();
+                    
+                    Swal.fire('Terhapus!', 'Nilai CBT siswa berhasil dihapus.', 'success');
+                }
+            });
+        }
+     // 1. Membuka Modal Pengumuman
+function simpanPengumuman() {
+    const inputJudul = document.getElementById('judul-pengumuman');
+    const inputIsi = document.getElementById('isi-pengumuman');
+    const inputTarget = document.getElementById('target-kelas-pengumuman');
+
+    if (!inputJudul || !inputIsi || !inputTarget) {
+        console.error("Elemen form pengumuman tidak ditemukan di HTML!");
+        return;
+    }
+
+    const judul = inputJudul.value.trim();
+    const isi = inputIsi.value.trim();
+    const targetKelas = inputTarget.value;
+
+    if (!judul || !isi) {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire('Perhatian', 'Judul dan isi pengumuman wajib diisi!', 'warning');
+        } else {
+            alert('Judul dan isi pengumuman wajib diisi!');
+        }
+        return;
+    }
+
+    // Ambil database lama dari localStorage
+    let pengumumanDB = JSON.parse(localStorage.getItem('pengumumanDB')) || [];
+
+    const pengumumanBaru = {
+        id: 'PENG-' + Date.now(),
+        tanggal: new Date().toISOString().split('T')[0],
+        judul: judul,
+        isi: isi,
+        targetKelas: targetKelas
+    };
+
+    pengumumanDB.unshift(pengumumanBaru);
+    
+    // Simpan ke localStorage
+    localStorage.setItem('pengumumanDB', JSON.stringify(pengumumanDB));
+
+    // Tutup modal Bootstrap jika ada
+    const modalEl = document.getElementById('modalPengumuman');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+    }
+
+    // Notifikasi sukses
+    if (typeof Swal !== 'undefined') {
+        Swal.fire('Berhasil!', 'Pengumuman berhasil diterbitkan.', 'success');
+    } else {
+        alert('Pengumuman berhasil diterbitkan.');
+    }
+
+    // Reset form dan refresh tabel guru
+    document.getElementById('form-pengumuman').reset();
+    if (typeof renderTabelPengumumanGuru === 'function') {
+        renderTabelPengumumanGuru();
+    }
+}
+
+// 3. Render Tabel Pengumuman di Sisi Guru
+function renderTabelPengumumanGuru() {
+    const tbody = document.getElementById('tbody-pengumuman');
+    if (!tbody) return;
+
+    let pengumumanDB = JSON.parse(localStorage.getItem('pengumumanDB')) || [];
+
+    if (pengumumanDB.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Belum ada pengumuman yang dibuat.</td></tr>';
+        return;
+    }
+
+    let html = '';
+    pengumumanDB.forEach((p, index) => {
+        html += `
+            <tr>
+                <td>${index + 1}</td>
+                <td>${p.tanggal}</td>
+                <td class="fw-bold">${p.judul}</td>
+                <td><span class="badge bg-secondary">${p.targetKelas}</span></td>
+                <td><small class="text-secondary">${p.isi}</small></td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-outline-danger py-0 border-0" onclick="hapusPengumuman('${p.id}')" title="Hapus"><i class="bi bi-trash"></i></button>
+                </td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = html;
+}
+
+// 4. Hapus Pengumuman (Guru)
+function hapusPengumuman(id) {
+    Swal.fire({
+        title: 'Hapus Pengumuman?',
+        text: "Pengumuman ini akan dihapus dan tidak lagi muncul di akun siswa.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: 'Ya, Hapus!'
+    }).then(result => {
+        if (result.isConfirmed) {
+            let pengumumanDB = JSON.parse(localStorage.getItem('pengumumanDB')) || [];
+            pengumumanDB = pengumumanDB.filter(p => p.id !== id);
+            localStorage.setItem('pengumumanDB', JSON.stringify(pengumumanDB));
+            
+            renderTabelPengumumanGuru();
+            Swal.fire('Terhapus!', 'Pengumuman berhasil dihapus.', 'success');
+        }
+    });
+}
+
+// 5. Render Pengumuman di Sisi Akun Siswa (Panggil fungsi ini saat siswa membuka dashboard/menu pengumuman siswa)
+function renderPengumumanSiswa(kelasSiswaLogin) {
+    const container = document.getElementById('container-pengumuman-siswa');
+    if (!container) return;
+
+    let pengumumanDB = JSON.parse(localStorage.getItem('pengumumanDB')) || [];
+    let pengumumanValid = pengumumanDB.filter(p => p.targetKelas === 'ALL' || p.targetKelas === kelasSiswaLogin);
+
+    if (pengumumanValid.length === 0) {
+        container.innerHTML = '<div class="text-muted text-center py-4">Belum ada pengumuman baru untuk kelas kamu.</div>';
+        return;
+    }
+
+    let html = '';
+    pengumumanValid.forEach(p => {
+        html += `
+            <div class="card mb-3 shadow-sm border-start border-primary border-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold text-primary mb-0"><i class="bi bi-megaphone-fill me-2"></i>${p.judul}</h6>
+                        <small class="text-muted"><i class="bi bi-calendar-event me-1"></i>${p.tanggal}</small>
+                    </div>
+                    <p class="mb-0 text-secondary" style="white-space: pre-line;">${p.isi}</p>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}      
     </script>
 </body>
 </html>
