@@ -1966,6 +1966,7 @@ async function saveData(type) {
 
                 // 2. Kirim dan Sinkronkan secara langsung ke Cloud Firebase
                 if(window.db && window.fbSetDoc && window.fbDoc) {
+                    if(type === 'jurnal' || !type) await syncToFirebase('jurnal', jurnalMengajar);
                     const syncToFirebase = async (docId, arrayData) => {
                         try {
                             const docRef = window.fbDoc(window.db, "wk_project_data", docId);
@@ -3040,37 +3041,40 @@ async function saveData(type) {
             }
         }
 
-        function simpanJurnal(e) {
-            e.preventDefault();
-            const id = document.getElementById('jurnal-id').value || 'JRN-' + Date.now();
-            const data = {
-                id: id,
-                tanggal: document.getElementById('jurnal-tanggal').value,
-                hari: document.getElementById('jurnal-hari').value,
-                ta: document.getElementById('jurnal-ta').value,
-                semester: document.getElementById('jurnal-semester').value,
-                mapel: document.getElementById('jurnal-mapel').value,
-                kelas: document.getElementById('jurnal-kelas').value,
-                jam: document.getElementById('jurnal-jam').value,
-                materi: document.getElementById('jurnal-materi').value,
-                tujuan: document.getElementById('jurnal-tujuan').value,
-                hadir: parseInt(document.getElementById('jurnal-hadir').value) || 0,
-                izin: parseInt(document.getElementById('jurnal-izin').value) || 0,
-                sakit: parseInt(document.getElementById('jurnal-sakit').value) || 0,
-                alpa: parseInt(document.getElementById('jurnal-alpa').value) || 0,
-                ringkasan: document.getElementById('jurnal-ringkasan').value,
-                tugas: document.getElementById('jurnal-tugas').value,
-                catatan: document.getElementById('jurnal-catatan').value
-            };
-            
-            const idx = jurnalMengajar.findIndex(j => j.id === id);
-            if(idx > -1) jurnalMengajar[idx] = data; else jurnalMengajar.push(data);
-            
-            saveData('jurnal');
-            renderTableJurnal();
-            updateJurnalDashboard();
-            toggleJurnalForm(false);
-            showToast('Jurnal Berhasil Disimpan');
+       function simpanJurnal(e) {
+    e.preventDefault();
+    const id = document.getElementById('jurnal-id').value || 'JRN-' + Date.now();
+    const data = {
+        id: id,
+        tanggal: document.getElementById('jurnal-tanggal').value,
+        hari: document.getElementById('jurnal-hari').value,
+        ta: document.getElementById('jurnal-ta').value,
+        semester: document.getElementById('jurnal-semester').value,
+        mapel: document.getElementById('jurnal-mapel').value,
+        kelas: document.getElementById('jurnal-kelas').value,
+        jam: document.getElementById('jurnal-jam').value,
+        materi: document.getElementById('jurnal-materi').value,
+        tujuan: document.getElementById('jurnal-tujuan').value,
+        hadir: parseInt(document.getElementById('jurnal-hadir').value) || 0,
+        izin: parseInt(document.getElementById('jurnal-izin').value) || 0,
+        sakit: parseInt(document.getElementById('jurnal-sakit').value) || 0,
+        alpa: parseInt(document.getElementById('jurnal-alpa').value) || 0,
+        ringkasan: document.getElementById('jurnal-ringkasan').value,
+        tugas: document.getElementById('jurnal-tugas').value,
+        catatan: document.getElementById('jurnal-catatan').value
+    };
+    
+    const idx = jurnalMengajar.findIndex(j => j.id === id);
+    if(idx > -1) jurnalMengajar[idx] = data; else jurnalMengajar.push(data);
+    
+    // --> INI KUNCI UTAMANYA: Menyimpan ke LocalStorage sekaligus Sync ke Cloud Firebase
+    saveData('jurnal'); 
+    
+    renderTableJurnal();
+    updateJurnalDashboard();
+    toggleJurnalForm(false);
+    showToast('Jurnal Berhasil Disimpan & Disinkronkan ke Cloud');
+}
         }
 
         function editJurnal(id) {
@@ -3098,14 +3102,19 @@ async function saveData(type) {
         }
 
         function hapusJurnal(id) {
-            Swal.fire({title: 'Hapus Jurnal?', icon:'warning', showCancelButton: true}).then(r => {
-                if(r.isConfirmed) {
-                    jurnalMengajar = jurnalMengajar.filter(j => j.id !== id);
-                    saveData('jurnal'); renderTableJurnal(); updateJurnalDashboard();
-                    showToast('Jurnal dihapus');
-                }
-            });
+    Swal.fire({title: 'Hapus Jurnal?', icon:'warning', showCancelButton: true}).then(r => {
+        if(r.isConfirmed) {
+            jurnalMengajar = jurnalMengajar.filter(j => j.id !== id);
+            
+            // --> Memperbarui penyimpanan lokal dan cloud setelah dihapus
+            saveData('jurnal'); 
+            
+            renderTableJurnal(); 
+            updateJurnalDashboard();
+            showToast('Jurnal dihapus dari sistem');
         }
+    });
+}
 
         function renderTableJurnal() {
             const tbody = document.getElementById('tbody-jurnal'); if(!tbody) return;
