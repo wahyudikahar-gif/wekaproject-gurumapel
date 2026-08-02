@@ -1166,10 +1166,10 @@
                         <div id="exam-run-soal-content" class="mb-4" style="font-size: 1.1rem; line-height: 1.6;"></div>
                         <div id="exam-run-jawaban-area" class="mb-4"></div>
                         <div class="d-flex justify-content-between mt-5 pt-3 border-top" style="border-color: var(--border-color)!important;">
-    <button class="btn btn-outline-secondary px-4" id="btn-exam-prev" onclick="navigasiSoal(-1)">Sebelumnya</button>
-    <button class="btn btn-warning text-dark fw-bold px-3" id="btn-exam-ragu" onclick="toggleRaguRagu()"><i class="bi bi-question-circle"></i> Ragu-Ragu</button>
-    <button class="btn btn-theme-primary px-4" id="btn-exam-next" onclick="navigasiSoal(1)">Selanjutnya</button>
-</div>
+                           <button class="btn btn-outline-secondary px-4" id="btn-exam-prev" onclick="navigasiSoal(-1)">Sebelumnya</button>
+<button class="btn btn-warning text-dark fw-bold px-3" id="btn-exam-ragu" onclick="toggleRaguRagu()"><i class="bi bi-question-circle"></i> Ragu-Ragu</button>
+<button class="btn btn-theme-primary px-4" id="btn-exam-next" onclick="navigasiSoal(1)">Selanjutnya</button>
+                        </div>
                     </div>
                 </div>
                 
@@ -1179,10 +1179,8 @@
                         <div class="d-flex flex-wrap gap-2 mb-4" id="exam-run-nav-grid"></div>
                         <div class="alert bg-warning text-dark small border-0 mb-4">
                             <i class="bi bi-exclamation-triangle-fill"></i> Peringatan Anti-Cheat! Dilarang berpindah Tab Browser. Sistem merekam dan melaporkan setiap pelanggaran ke Admin.
-                        <!-- TOMBOL SELESAI UJIAN INI JANGAN SAMPAI TERHAPUS -->
-    <button class="btn btn-success w-100 py-2 fw-bold" onclick="konfirmasiSelesaiUjian()">SELESAI & KUMPULKAN JAWABAN</button>
-</div>
                         </div>
+                        <button class="btn btn-success w-100 py-2 fw-bold" onclick="konfirmasiSelesaiUjian()">SELESAI & KUMPULKAN JAWABAN</button>
                     </div>
                 </div>
             </div>
@@ -1966,7 +1964,6 @@ async function saveData(type) {
 
                 // 2. Kirim dan Sinkronkan secara langsung ke Cloud Firebase
                 if(window.db && window.fbSetDoc && window.fbDoc) {
-                    if(type === 'jurnal' || !type) await syncToFirebase('jurnal', jurnalMengajar);
                     const syncToFirebase = async (docId, arrayData) => {
                         try {
                             const docRef = window.fbDoc(window.db, "wk_project_data", docId);
@@ -2387,7 +2384,7 @@ async function saveData(type) {
             return { jumlah: arr.length, totalPoin: poin };
         }
 
-       function generateLegerDataForClass(kelas) {
+        function generateLegerDataForClass(kelas) {
     let siswas = databaseSiswa.filter(s => s.kelas === kelas).sort((a,b) => a.nama.localeCompare(b.nama));
     let result = [];
     
@@ -2440,7 +2437,6 @@ async function saveData(type) {
     });
     return result;
 }
-
         function renderLegerAdmin() {
             const tbody = document.getElementById('tbody-leger-admin'); if(!tbody) return; tbody.innerHTML = '';
             const kls = document.getElementById('filter-kelas-leger').value;
@@ -3041,40 +3037,37 @@ async function saveData(type) {
             }
         }
 
-       function simpanJurnal(e) {
-    e.preventDefault();
-    const id = document.getElementById('jurnal-id').value || 'JRN-' + Date.now();
-    const data = {
-        id: id,
-        tanggal: document.getElementById('jurnal-tanggal').value,
-        hari: document.getElementById('jurnal-hari').value,
-        ta: document.getElementById('jurnal-ta').value,
-        semester: document.getElementById('jurnal-semester').value,
-        mapel: document.getElementById('jurnal-mapel').value,
-        kelas: document.getElementById('jurnal-kelas').value,
-        jam: document.getElementById('jurnal-jam').value,
-        materi: document.getElementById('jurnal-materi').value,
-        tujuan: document.getElementById('jurnal-tujuan').value,
-        hadir: parseInt(document.getElementById('jurnal-hadir').value) || 0,
-        izin: parseInt(document.getElementById('jurnal-izin').value) || 0,
-        sakit: parseInt(document.getElementById('jurnal-sakit').value) || 0,
-        alpa: parseInt(document.getElementById('jurnal-alpa').value) || 0,
-        ringkasan: document.getElementById('jurnal-ringkasan').value,
-        tugas: document.getElementById('jurnal-tugas').value,
-        catatan: document.getElementById('jurnal-catatan').value
-    };
-    
-    const idx = jurnalMengajar.findIndex(j => j.id === id);
-    if(idx > -1) jurnalMengajar[idx] = data; else jurnalMengajar.push(data);
-    
-    // --> INI KUNCI UTAMANYA: Menyimpan ke LocalStorage sekaligus Sync ke Cloud Firebase
-    saveData('jurnal'); 
-    
-    renderTableJurnal();
-    updateJurnalDashboard();
-    toggleJurnalForm(false);
-    showToast('Jurnal Berhasil Disimpan & Disinkronkan ke Cloud');
-}
+        function simpanJurnal(e) {
+            e.preventDefault();
+            const id = document.getElementById('jurnal-id').value || 'JRN-' + Date.now();
+            const data = {
+                id: id,
+                tanggal: document.getElementById('jurnal-tanggal').value,
+                hari: document.getElementById('jurnal-hari').value,
+                ta: document.getElementById('jurnal-ta').value,
+                semester: document.getElementById('jurnal-semester').value,
+                mapel: document.getElementById('jurnal-mapel').value,
+                kelas: document.getElementById('jurnal-kelas').value,
+                jam: document.getElementById('jurnal-jam').value,
+                materi: document.getElementById('jurnal-materi').value,
+                tujuan: document.getElementById('jurnal-tujuan').value,
+                hadir: parseInt(document.getElementById('jurnal-hadir').value) || 0,
+                izin: parseInt(document.getElementById('jurnal-izin').value) || 0,
+                sakit: parseInt(document.getElementById('jurnal-sakit').value) || 0,
+                alpa: parseInt(document.getElementById('jurnal-alpa').value) || 0,
+                ringkasan: document.getElementById('jurnal-ringkasan').value,
+                tugas: document.getElementById('jurnal-tugas').value,
+                catatan: document.getElementById('jurnal-catatan').value
+            };
+            
+            const idx = jurnalMengajar.findIndex(j => j.id === id);
+            if(idx > -1) jurnalMengajar[idx] = data; else jurnalMengajar.push(data);
+            
+            saveData('jurnal');
+            renderTableJurnal();
+            updateJurnalDashboard();
+            toggleJurnalForm(false);
+            showToast('Jurnal Berhasil Disimpan');
         }
 
         function editJurnal(id) {
@@ -3102,19 +3095,14 @@ async function saveData(type) {
         }
 
         function hapusJurnal(id) {
-    Swal.fire({title: 'Hapus Jurnal?', icon:'warning', showCancelButton: true}).then(r => {
-        if(r.isConfirmed) {
-            jurnalMengajar = jurnalMengajar.filter(j => j.id !== id);
-            
-            // --> Memperbarui penyimpanan lokal dan cloud setelah dihapus
-            saveData('jurnal'); 
-            
-            renderTableJurnal(); 
-            updateJurnalDashboard();
-            showToast('Jurnal dihapus dari sistem');
+            Swal.fire({title: 'Hapus Jurnal?', icon:'warning', showCancelButton: true}).then(r => {
+                if(r.isConfirmed) {
+                    jurnalMengajar = jurnalMengajar.filter(j => j.id !== id);
+                    saveData('jurnal'); renderTableJurnal(); updateJurnalDashboard();
+                    showToast('Jurnal dihapus');
+                }
+            });
         }
-    });
-}
 
         function renderTableJurnal() {
             const tbody = document.getElementById('tbody-jurnal'); if(!tbody) return;
@@ -4439,17 +4427,15 @@ function bukaModalSoal() {
                         </select>
                     </div>`;
                 });
-           } else if (soal.tipe === 'MJ') {
+        } else if (soal.tipe === 'MJ') {
                 let savedObj = typeof savedAns === 'object' ? savedAns : {};
                 jHtml += `<div class="small text-muted mb-3 fw-bold">Pilih pasangan yang cocok untuk masing-masing premis:</div>`;
                 
-                // Kumpulkan daftar semua pilihan pasangan dari bank soal untuk dimasukkan ke dropdown
                 let listPasangan = (soal.opsi || []).map(item => item.pasangan);
 
                 (soal.opsi || []).forEach((item, i) => {
                     let val = savedObj[i] || '';
                     
-                    // Buat elemen select dropdown
                     let dropdownHTML = `<select class="form-select form-select-sm form-select-custom" onchange="simpanJawabanKompleksMJ(${i}, this.value)">
                         <option value="">-- Pilih Pasangan --</option>`;
                     
@@ -4522,94 +4508,83 @@ function bukaModalSoal() {
                 }
             });
         }
-function selesaikanUjian(isAutoTimeOut = false) {
-    if(typeof examTimerInterval !== 'undefined' && examTimerInterval) clearInterval(examTimerInterval);
-    if(typeof hentikanSinyalUjian === 'function') hentikanSinyalUjian();
+
+        function selesaikanUjian(isAutoTimeOut = false) {
+    if(examTimerInterval) clearInterval(examTimerInterval);
+    hentikanSinyalUjian();
     
-    // Tutup tampilan ruang ujian
     const overlay = document.getElementById('ruang-ujian-overlay');
     if(overlay) overlay.style.display = 'none';
-    if(typeof isTakingExam !== 'undefined') isTakingExam = false;
+    isTakingExam = false;
     
-    // 1. Hitung nilai otomatis
+    // 1. Koreksi otomatis untuk soal PG & Isian Singkat
     let totalPoinDiperoleh = 0;
     let totalBobotMaks = 0;
     
-    if(typeof currentExam !== 'undefined' && currentExam && currentExam.soalList) {
-        currentExam.soalList.forEach((soal, idx) => {
-            let bobot = parseInt(soal.bobot) || 10;
-            totalBobotMaks += bobot;
-            let ans = typeof currentExamAnswers !== 'undefined' ? currentExamAnswers[idx] : null;
-            
-            if (soal.tipe === 'PG' || soal.tipe === 'IS') {
-                if (ans && String(ans).trim().toLowerCase() === String(soal.kunci).trim().toLowerCase()) {
-                    totalPoinDiperoleh += bobot;
-                }
-            } else {
-                if (ans !== undefined && ans !== '' && JSON.stringify(ans) !== '{}') {
-                    totalPoinDiperoleh += Math.round(bobot * 0.7); 
-                }
+    currentExam.soalList.forEach((soal, idx) => {
+        let bobot = parseInt(soal.bobot) || 10;
+        totalBobotMaks += bobot;
+        let ans = currentExamAnswers[idx];
+        
+        if (soal.tipe === 'PG' || soal.tipe === 'IS') {
+            if (ans && String(ans).trim().toLowerCase() === String(soal.kunci).trim().toLowerCase()) {
+                totalPoinDiperoleh += bobot;
             }
-        });
-    }
+        } else {
+            if (ans !== undefined && ans !== '' && JSON.stringify(ans) !== '{}') {
+                totalPoinDiperoleh += Math.round(bobot * 0.7); 
+            }
+        }
+    });
     
     let skorAkhir = totalBobotMaks > 0 ? Math.round((totalPoinDiperoleh / totalBobotMaks) * 100) : 0;
-    let kkm = (typeof currentExam !== 'undefined' && currentExam && currentExam.kkm) ? (parseInt(currentExam.kkm) || 75) : 75;
-    let predikat = (typeof getPredikat === 'function') ? getPredikat(skorAkhir) : 'C';
+    let kkm = parseInt(currentExam.kkm) || 75;
+    let predikat = getPredikat(skorAkhir);
     let ket = skorAkhir >= kkm ? 'Lulus / Tuntas' : 'Remedial / Belum Tuntas';
     
-    // 2. Buat objek data hasil ujian
+    // 2. Buat objek hasil ujian
     const hasilObj = {
         id: 'HSU-' + Date.now(),
-        ujianId: (typeof currentExam !== 'undefined' && currentExam) ? currentExam.id : 'UNKNOWN',
-        judulUjian: (typeof currentExam !== 'undefined' && currentExam) ? currentExam.judul : 'Ujian CBT',
-        nisn: (typeof currentSiswaData !== 'undefined' && currentSiswaData) ? currentSiswaData.nisn : '',
-        namaSiswa: (typeof currentSiswaData !== 'undefined' && currentSiswaData) ? currentSiswaData.nama : '',
-        kelas: (typeof currentSiswaData !== 'undefined' && currentSiswaData) ? currentSiswaData.kelas : '',
+        ujianId: currentExam.id,
+        judulUjian: currentExam.judul,
+        nisn: currentSiswaData.nisn,
+        namaSiswa: currentSiswaData.nama,
+        kelas: currentSiswaData.kelas,
         waktuSelesai: new Date().toLocaleString('id-ID'),
         skor: skorAkhir,
         predikat: predikat,
         keterangan: ket,
-        jawabanSiswa: (typeof currentExamAnswers !== 'undefined') ? currentExamAnswers : {}
+        jawabanSiswa: currentExamAnswers
     };
     
-    // 3. Simpan ke array hasilujianDB (huruf kecil sesuai fungsi riwayat Anda)
-    if(typeof hasilujianDB === 'undefined' || !Array.isArray(hasilujianDB)) {
-        window.hasilujianDB = [];
+    // 3. AMBIL DATA TERBARU DARI STORAGE TERLEBIH DAHULU (Pencegahan data tertimpa)
+    let savedHasil = localStorage.getItem('guruPro_hasilujian');
+    if(savedHasil) {
+        try { hasilUjianDB = JSON.parse(savedHasil); } catch(e) { hasilUjianDB = []; }
     }
-    
-    // Hapus data lama jika siswa mengulang, lalu masukkan yang baru
-    window.hasilujianDB = window.hasilujianDB.filter(h => !(h.nisn === hasilObj.nisn && h.ujianId === hasilObj.ujianId));
-    window.hasilujianDB.push(hasilObj);
-    
-    // 4. SIMPAN KE LOCALSTORAGE & FIRECLOUD
-    if(typeof saveData === 'function') {
-        saveData('hasilujian');
+    if(!Array.isArray(hasilUjianDB)) hasilUjianDB = [];
+
+    // Cek apakah siswa ini sudah pernah menyimpan sebelumnya untuk ujian ini
+    let existingIndex = hasilUjianDB.findIndex(h => h.nisn === currentSiswaData.nisn && h.ujianId === currentExam.id);
+    if(existingIndex > -1) {
+        hasilUjianDB[existingIndex] = hasilObj; // Update jika sudah ada
     } else {
-        localStorage.setItem('guruPro_hasilujian', JSON.stringify(window.hasilujianDB));
+        hasilUjianDB.push(hasilObj); // Tambah baru
     }
     
-    // 5. Notifikasi & Pengalihan Halaman yang Aman
-    if(typeof Swal !== 'undefined') {
-        Swal.fire({
-            title: isAutoTimeOut ? 'Waktu Ujian Telah Habis!' : 'Ujian Berhasil Dikumpulkan!',
-            text: `Skor Akhir Anda: ${skorAkhir}`,
-            icon: 'success'
-        }).then(() => {
-            if(typeof switchTab === 'function') {
-                switchTab('view-cbt-siswa', document.getElementById('nav-siswa-cbt'));
-            }
-            if(typeof renderUjianSiswa === 'function') renderUjianSiswa();
-            if(typeof renderRiwayatUjianSiswa === 'function') renderRiwayatUjianSiswa();
-        });
-    } else {
-        alert('Ujian Selesai! Skor: ' + skorAkhir);
-        if(typeof switchTab === 'function') {
-            switchTab('view-cbt-siswa', document.getElementById('nav-siswa-cbt'));
-        }
-        if(typeof renderUjianSiswa === 'function') renderUjianSiswa();
-        if(typeof renderRiwayatUjianSiswa === 'function') renderRiwayatUjianSiswa();
-    }
+    // 4. SIMPAN PERMANEN KE LOCALSTORAGE & FIREBASE CLOUD
+    saveData('hasilujian'); 
+    
+    Swal.fire({
+        title: isAutoTimeOut ? 'Waktu Ujian Telah Habis!' : 'Ujian Selesai!',
+        text: `Skor Akhir Anda: ${skorAkhir} (${ket})`,
+        icon: 'success'
+    });
+    
+    // 5. Arahkan ke tab riwayat agar tombol ujian berubah menjadi "Ujian Sudah Selesai" (terkunci)
+    switchTab('view-cbt-siswa', document.getElementById('nav-siswa-cbt'));
+    renderUjianSiswa();
+    renderRiwayatUjianSiswa();
 }
     function renderRiwayatUjianSiswa() {
             const tbody = document.getElementById('tbody-riwayat-siswa');
@@ -5446,6 +5421,15 @@ function renderPengumumanSiswa(kelasSiswaLogin) {
     });
 
     container.innerHTML = html;
+}
+function soalSelanjutnya() {
+    if (currentIndex < daftarSoal.length - 1) {
+        currentIndex++;
+        tampilkanSoal(currentIndex);
+    } else {
+        // Jika sudah di soal terakhir, arahkan ke tombol selesai/konfirmasi
+        console.log("Ini sudah soal terakhir.");
+    }
 }      
     </script>
 </body>
